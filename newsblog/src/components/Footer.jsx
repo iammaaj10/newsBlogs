@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import SignUp from '../components/SignUp'; // Assuming you have a SignUp component
+import { FaXTwitter } from "react-icons/fa6";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css'; // Import Toastify styles
+import Login from './Login';
 
 const Footer = () => {
   const [showSignUp, setShowSignUp] = useState(false);
@@ -39,8 +40,8 @@ const Footer = () => {
         <div className='bg-violet-700 rounded-full px-[8px] py-[2px] transition-transform transform hover:scale-125 hover:bg-gray-200 hover:text-black'> 
           <i className="fa-brands fa-facebook cursor-pointer text-xl"></i>
         </div>
-        <div className='bg-violet-700 rounded-full px-[8px] py-[2px] transition-transform transform hover:scale-125 hover:bg-gray-200 hover:text-black'>
-          <i className="fa-brands fa-twitter cursor-pointer text-xl"></i>
+        <div className='bg-violet-700 rounded-full px-[8px] py-[7px] transition-transform transform hover:scale-125 hover:bg-gray-200 hover:text-black'>
+        <FaXTwitter className='cursor-pointer' />
         </div>
         <div className='bg-violet-700 rounded-full px-[8px] py-[2px] transition-transform transform hover:scale-125 hover:bg-gray-200 hover:text-black'>
           <i className="fa-brands fa-github cursor-pointer text-xl"></i>
@@ -116,7 +117,7 @@ const Footer = () => {
       </div>
 
       {/* Show SignUp Modal when clicked */}
-      {showSignUp && <SignUp onClose1={handleSignUpClick1} />}
+      {showSignUp && <Login onClose1={handleSignUpClick1} />}
     </div>
   );
 };

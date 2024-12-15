@@ -8,9 +8,15 @@ import Layout from './components/Layout.jsx';
 import './index.css';
 import Entertainment from './pages/Entertainment.jsx';
 import Technology from './pages/Technology.jsx';
-import Premium from './pages/Premium.jsx';
-
-
+import PremiumLayout from './components/PremiumLayout.jsx';
+import Profile from './components/Profile.jsx';
+import Post from './components/Post.jsx';
+import { ToastContainer, toast } from "react-toastify";
+import {Provider} from "react-redux"
+import store from './redux/store.js';
+import { PersistGate } from 'redux-persist/integration/react'
+import { persistStore } from 'redux-persist';
+let persistor = persistStore(store)
 const router = createBrowserRouter([
   {
     path: '/',
@@ -37,16 +43,32 @@ const router = createBrowserRouter([
    
   },
   {
-    path:'premium',
-    element:<Premium/>
+    path: 'premium',
+    element: <PremiumLayout />,  
+    children: [
+      {
+        path: '',  
+        element: <Post />  
+      },
+      {
+        path: 'profile/:id',
+        element: <Profile />  
+      }
+    ]
   }
 ]);
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <App/>
-    <RouterProvider router={router} />
-    
+    <Provider store={store}>
+      <RouterProvider router={router} />
+      <ToastContainer position="top-center" autoClose={3000} />
+      <PersistGate persistor={persistor} loading={null} >
+      <App/>
+      </PersistGate>
+      
+    </Provider>
   </React.StrictMode>
 );
+
 

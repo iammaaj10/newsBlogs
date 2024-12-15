@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import SignUp from '../components/SignUp';
 import Login from './Login';
 
 const Navbar = () => {
@@ -73,7 +72,7 @@ const Navbar = () => {
                 </button>
             </div>
 
-            <button className="hidden lg:flex border-gray-500 text-white bg-blue-800 rounded-md px-6 py-2 items-center hover:bg-gray-300 hover:border hover:border-gray-500 hover:text-black gap-2 group" onClick={handleSignUpClick}>
+            <button className="hidden lg:flex border-gray-500 text-white bg-blue-800 rounded-md px-6 py-2 items-center hover:bg-gray-300 hover:border hover:border-gray-500 hover:text-black gap-2 group" onClick={handleLogin}>
                 Join Us
                 <i className="fa-solid fa-arrow-right group-hover:translate-x-2 transition duration-300"></i>
             </button>
@@ -131,14 +130,14 @@ const Navbar = () => {
                 </div>
 
                 <div className="mt-6">
-                    <button className="border-gray-500 text-white bg-blue-800 rounded-md px-6 py-2 items-center hover:bg-gray-300 hover:border hover:border-gray-500 hover:text-black group" onClick={handleSignUpClick}>
+                    <button className="border-gray-500 text-white bg-blue-800 rounded-md px-6 py-2 items-center hover:bg-gray-300 hover:border hover:border-gray-500 hover:text-black group" onClick={handleLogin}>
                         Join Us
                         <i className="fa-solid fa-arrow-right group-hover:translate-x-2 transition duration-300"></i>
                     </button>
                 </div>
             </div>
 
-            {showSignUp && <SignUp onClose1={handleSignUpClick1}/>}
+            
             {showLogin && <Login onClose={handleLogin1}
              />}
         </nav>
