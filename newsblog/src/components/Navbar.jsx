@@ -68,7 +68,7 @@ const Navbar = () => {
                     className="font-bold block py-2 pr-4 pl-3 duration-200 text-white hover:text-orange-700"
                     onClick={handleLogin}
                 >
-                    Premium
+                    NewsBlogs
                 </button>
             </div>
 
@@ -125,7 +125,7 @@ const Navbar = () => {
                         className="block py-2 pr-4 pl-3 duration-200 text-white hover:text-orange-700"
                         onClick={handleLogin}
                     >
-                        Premium
+                        NewsBlogs
                     </button>
                 </div>
 
