@@ -23,7 +23,7 @@ const PremiumLayout = () => {
   
   return (
     <>
-   <div className='flex justify-between w-[80%] mx-auto'>
+   <div className='flex justify-between w-[90%] mx-auto '>
      <PremiumNav/>
         <Outlet />
       <RigthBar otherUsers={ otherUsers}/>
