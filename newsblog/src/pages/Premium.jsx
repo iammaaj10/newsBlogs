@@ -8,9 +8,14 @@ import PremiumLayout from '../components/PremiumLayout'
 
 const Premium = () => {
   return (
+    <>
     
+    <PremiumLayout/>
+    
+     
+    </>
    
-       <PremiumLayout/>
+      
     
     
     
