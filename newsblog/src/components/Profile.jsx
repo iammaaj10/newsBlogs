@@ -3,6 +3,7 @@ import { IoArrowBackCircleOutline } from "react-icons/io5";
 import { Link, useParams } from 'react-router-dom';
 import Avatar from 'react-avatar';
 import Profile1 from "../assets/profile.jpg";
+import useGetProfile from '../hooks/useGetProfile';
 import { useDispatch, useSelector } from 'react-redux';
 import axios from 'axios';
 import { USER_API_END_POINT } from '../utils/constant';
@@ -10,9 +11,10 @@ import { followingUpdate } from '../redux/userSlice';
 import { toggleRefresh } from '../redux/blogsSlics';
 
 const Profile = () => {
-    const { user, profile } = useSelector(store => store.user);
-    const { id } = useParams();
-    const dispatch = useDispatch();
+    const { user, profile } = useSelector(store => store.user)
+    const { id } = useParams()
+    const dispatch = useDispatch()
+    useGetProfile(id)
 
     const [isEditing, setIsEditing] = useState(false);
     const [updatedProfile, setUpdatedProfile] = useState({
@@ -22,17 +24,6 @@ const Profile = () => {
     });
 
     const [profilePicUrl, setProfilePicUrl] = useState(updatedProfile.profilePic);
-
-    // Fetch profile data when the component loads
-    useEffect(() => {
-        if (profile) {
-            setUpdatedProfile({
-                username: profile.username,
-                about: profile.about,
-                profilePic: profile.profilePic
-            });
-        }
-    }, [profile]);
 
     // Update profilePicUrl when the profile picture is changed
     useEffect(() => {
@@ -47,7 +38,6 @@ const Profile = () => {
         }
     }, [updatedProfile.profilePic]);
 
-    // Handle input changes for username and about
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setUpdatedProfile({
@@ -56,52 +46,23 @@ const Profile = () => {
         });
     };
 
-    // Handle profile picture change
-    const handleProfilePicChange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setUpdatedProfile({
-                    ...updatedProfile,
-                    profilePic: reader.result // This is the base64 string
-                });
-            };
-            reader.readAsDataURL(file); // Convert the file to base64
-        }
-    };
-
-    // Save changes to the profile
     const handleSave = async () => {
         try {
             axios.defaults.withCredentials = true;
-            const { username, about, profilePic } = updatedProfile;
+            const formData = new FormData();
+            formData.append('username', updatedProfile.username);
+            formData.append('about', updatedProfile.about);
+            formData.append('profilePic', updatedProfile.profilePic);
 
-            const res = await axios.put(`${USER_API_END_POINT}/updateprofile/${user._id}`, {
-                username,
-                about,
-                profilePic // Send base64 string of the image
-            });
-
-            // Update Redux store or local state with the updated profile data
-            dispatch(followingUpdate(res.data.user));  // Assuming res.data.user contains the updated profile
-            dispatch(toggleRefresh());  // Trigger re-fetch of the updated profile if necessary
+            const res = await axios.put(`${USER_API_END_POINT}/updateprofile/${user._id}`, formData);
+            dispatch(toggleRefresh());
             setIsEditing(false);
-
-            // Update the local state with the new profile data
-            setUpdatedProfile({
-                username: res.data.user.username,
-                about: res.data.user.about,
-                profilePic: res.data.user.profilePic
-            });
-
             console.log(res.data);
         } catch (error) {
             console.error("Error updating profile:", error.response?.data || error.message);
         }
     };
 
-    // Follow/Unfollow handler
     const followAndUnfollowHandler = async () => {
         if (user.following.includes(id)) {
             try {
@@ -192,7 +153,7 @@ const Profile = () => {
                         <input
                             type="file"
                             name="profilePic"
-                            onChange={handleProfilePicChange}
+                            onChange={(e) => setUpdatedProfile({ ...updatedProfile, profilePic: e.target.files[0] })}
                             className="w-full mt-2"
                         />
                         <button
