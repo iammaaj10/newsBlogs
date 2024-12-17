@@ -11,8 +11,8 @@ const Blog = ({ selected, setSelected }) => {
           {buttons.map((button, index) => (
             <button
               key={index}
-              onClick={() => setSelected(index)}  
-              className={`py-1 rounded-md lg:p-3 lg:rounded-2xl lg:m-2 font-bold ${selected === index ? 'bg-gray-400 text-black border-gray-400' : 'bg-orange-600 text-white border-orange-400'} hover:bg-gray-400 hover:text-black hover:border-gray-400`}
+              onClick={() => setSelected(index)}   
+              className={`hidden sm:block py-1 rounded-md lg:p-3 lg:rounded-2xl lg:m-2 font-bold  ${selected === index ? 'bg-gray-400 text-black border-gray-400' : 'bg-orange-600 text-white border-orange-400'} hover:bg-gray-400 hover:text-black hover:border-gray-400`}
             >
               {button}
             </button>

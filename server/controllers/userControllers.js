@@ -2,6 +2,8 @@ import { User } from "../models/userSchema.js";
 import bcryptjs from "bcryptjs";
 import  jwt  from "jsonwebtoken";
 import { Blog } from "../models/blogsSchema.js";
+import multer from "multer"
+import path from "path"
 
 
 export const Register = async (req, res) => {
@@ -267,4 +269,7 @@ export const unfollow = async (req,res) => {
         
     }
 }
+
+
+
 
