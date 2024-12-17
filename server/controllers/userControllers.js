@@ -271,29 +271,27 @@ export const unfollow = async (req,res) => {
 }
 
 
+// Backend
 export const updateProfile = async (req, res) => {
     try {
-        const { username, about, profilePic } = req.body; 
-        const userId = req.params.id; 
-
-        
+        const { username, about, profilePic } = req.body;
+        const userId = req.params.id;
         const user = await User.findById(userId);
 
         if (!user) {
             return res.status(404).json({ message: "User not found", success: false });
         }
 
-       
         user.username = username || user.username;
         user.about = about || user.about;
-        user.profilePic = profilePic || user.profilePic; 
+        user.profilePic = profilePic || user.profilePic;
 
-       
         await user.save();
 
+        // Send updated user data in the response
         return res.status(200).json({
             message: "Profile updated successfully",
-            user,
+            user,  // Send updated user data
             success: true
         });
     } catch (error) {
@@ -304,4 +302,5 @@ export const updateProfile = async (req, res) => {
         });
     }
 };
+
 
