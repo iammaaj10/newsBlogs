@@ -5,6 +5,7 @@ import blogsRoute from "./routes/blogsRoute.js";
 import cookieParser from "cookie-parser";
 import userRoute from "./routes/userRoute.js"; 
 import cors from "cors"
+import multer from "multer";
 
 dotenv.config({
     path: ".env"
@@ -26,6 +27,7 @@ const corsOptions={
 }
 
 app.use(cors(corsOptions))
+
 
 app.use("/api/v1/user",userRoute)
 app.use("/api/v1/blog", blogsRoute);

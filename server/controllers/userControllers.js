@@ -271,5 +271,37 @@ export const unfollow = async (req,res) => {
 }
 
 
+export const updateProfile = async (req, res) => {
+    try {
+        const { username, about, profilePic } = req.body; 
+        const userId = req.params.id; 
 
+        
+        const user = await User.findById(userId);
+
+        if (!user) {
+            return res.status(404).json({ message: "User not found", success: false });
+        }
+
+       
+        user.username = username || user.username;
+        user.about = about || user.about;
+        user.profilePic = profilePic || user.profilePic; 
+
+       
+        await user.save();
+
+        return res.status(200).json({
+            message: "Profile updated successfully",
+            user,
+            success: true
+        });
+    } catch (error) {
+        console.error("Error in updateProfile:", error);
+        return res.status(500).json({
+            message: "Internal server error",
+            success: false
+        });
+    }
+};
 
