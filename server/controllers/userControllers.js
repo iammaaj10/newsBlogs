@@ -276,7 +276,7 @@ export const updateProfile = async (req, res) => {
     try {
         const { username, about, profilePic } = req.body;
         const userId = req.params.id;
-        
+
         // Find the user by ID
         const user = await User.findById(userId);
 
@@ -287,7 +287,11 @@ export const updateProfile = async (req, res) => {
         // Update user fields with the provided data
         user.username = username || user.username;
         user.about = about || user.about;
-        user.profilePic = profilePic || user.profilePic;
+
+        // Handle profilePic if it's a file upload
+        if (profilePic && profilePic !== user.profilePic) {
+            user.profilePic = profilePic; // Assuming you are sending the URL of the profile picture
+        }
 
         // Save the updated user document to the database
         await user.save();
@@ -306,5 +310,6 @@ export const updateProfile = async (req, res) => {
         });
     }
 };
+
 
 

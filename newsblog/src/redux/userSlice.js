@@ -1,6 +1,4 @@
-// userSlice.js
 import { createSlice } from "@reduxjs/toolkit";
-
 
 const userSlice = createSlice({
     name: "user",
@@ -28,21 +26,17 @@ const userSlice = createSlice({
         },
         updateUserBookmarks: (state, action) => {
             if (state.user) {
-                state.user.Bookmarks = action.payload; 
+                state.user.Bookmarks = action.payload;
             }
         },
-        updateUsersLikes:(state , action)=>
-        {
-            if(state.user)
-            {
+        updateUsersLikes: (state, action) => {
+            if (state.user) {
                 state.user.likes = action.payload;
             }
         },
-        updateComments:(state , action )=>
-        {
-            if(state.user)
-            {
-                state.user.addComment= action.payload
+        updateComments: (state, action) => {
+            if (state.user) {
+                state.user.addComment = action.payload;
             }
         },
         updateProfile: (state, action) => {
@@ -56,5 +50,5 @@ const userSlice = createSlice({
     },
 });
 
-export const { getUsers, getOtherUsers, getprofile, followingUpdate, updateUserBookmarks ,updateUsersLikes ,updateComments ,updateProfile } = userSlice.actions;
+export const { getUsers, getOtherUsers, getprofile, followingUpdate, updateUserBookmarks, updateUsersLikes, updateComments, updateProfile } = userSlice.actions;
 export default userSlice.reducer;
