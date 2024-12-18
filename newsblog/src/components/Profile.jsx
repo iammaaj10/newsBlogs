@@ -25,13 +25,13 @@ const Profile = () => {
 
     const [profilePicUrl, setProfilePicUrl] = useState(updatedProfile.profilePic);
 
-    // Update profilePicUrl when the profile picture is changed
+   
     useEffect(() => {
         if (updatedProfile.profilePic && updatedProfile.profilePic instanceof File) {
             const url = URL.createObjectURL(updatedProfile.profilePic);
             setProfilePicUrl(url);
 
-            // Clean up the object URL when component unmounts or when file changes
+            
             return () => URL.revokeObjectURL(url);
         } else {
             setProfilePicUrl(updatedProfile.profilePic);
@@ -105,13 +105,13 @@ const Profile = () => {
                         <p className="text-sm text-gray-500">10 Blogs</p>
                     </div>
                 </div>
-                <img
+                {/* <img
                     src="https://imgs.search.brave.com/v8Lgjc62rJivvFtkzX91-czZPti2om6TblO7kJhZTEg/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9tZWRp/YS5nZXR0eWltYWdl/cy5jb20vaWQvMTM1/MDIzMDIzOC9waG90/by9tYWxlLWhhY2tl/cnMtZG9pbmctY29k/aW5nLW92ZXItbGFw/dG9wLWF0LXN0YXJ0/dXAtY29tcGFueS5q/cGc_cz02MTJ4NjEy/Jnc9MCZrPTIwJmM9/R0d5Umhnb2RuMDB1/MW8xalVHckFIMEcz/S1RKS3I1aUgxT3Uz/YThhYVBBaz0"
                     alt="banner"
                     className="rounded-md w-full h-60"
-                />
-                <div className="absolute top-[260px] border-4 border-white rounded-full m-2">
-                    <Avatar src={profilePicUrl || Profile1} size="90" round={true} />
+                /> */}
+                <div className="absolute top-[100px] right-[500px] border-4 border-white rounded-full m-2">
+                    <Avatar src={profilePicUrl || Profile1} size="300" round={true} />
                 </div>
 
                 <div className="text-right p-2">
@@ -167,10 +167,11 @@ const Profile = () => {
 
                 <div className="m-3">
                     <h1 className="text-lg font-bold">{profile?.name}</h1>
-                    <p className="text-sm">{`@${profile?.username}`}</p>
+                    <p className="text-md">{`@${profile?.username}`}</p>
                 </div>
                 <div className="m-3">
-                    <p className="text-sm">{profile?.about}</p>
+                    
+                    <p className="text-md font-poppins">{`${profile?.about}`}</p>
                 </div>
             </div>
         </div>
