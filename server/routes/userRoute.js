@@ -13,7 +13,7 @@ router.route("/profile/:id").get(isAuthenticated,profile)
 router.route("/otheruser/:id").get(isAuthenticated,getOtherUsers)
 router.route("/follower/:id").post(isAuthenticated,follower)
 router.route("/unfollow/:id").post(isAuthenticated,unfollow)
-router.route("/updateprofile/:id").put(isAuthenticated,updateProfile)
+router.route("/updateprofile/:id").put(updateProfile)
 
  
 

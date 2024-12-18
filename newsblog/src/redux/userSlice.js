@@ -45,7 +45,7 @@ const userSlice = createSlice({
                 state.user.addComment= action.payload
             }
         },
-        updateProfile:(state , action)=>{
+        updateProfile: (state, action) => {
             if (state.profile && state.profile._id === state.user._id) {
                 state.profile = {
                     ...state.profile,

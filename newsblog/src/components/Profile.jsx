@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { IoArrowBackCircleOutline } from "react-icons/io5";
 import { Link, useParams } from 'react-router-dom';
 import Avatar from 'react-avatar';
-import useGetProfile from '../hooks/useGetProfile';
+import useGetProfile from '../hooks/useGetProfile'; // Import the custom hook
 import { useDispatch, useSelector } from 'react-redux';
 import axios from 'axios';
 import { USER_API_END_POINT } from '../utils/constant';
@@ -10,10 +10,17 @@ import { updateProfile } from '../redux/userSlice';
 import { toggleRefresh } from '../redux/blogsSlics';
 
 const Profile = () => {
-    const { user, profile } = useSelector(store => store.user);
+    const { user } = useSelector(store => store.user);
     const { id } = useParams();
     const dispatch = useDispatch();
-    useGetProfile(id);
+    
+    // Get profile from the custom hook
+    const profile = useGetProfile(id);
+
+    // If profile is not yet fetched, show loading state
+    if (!profile) {
+        return <div>Loading...</div>;
+    }
 
     const [isEditing, setIsEditing] = useState(false);
     const [updatedProfile, setUpdatedProfile] = useState({
@@ -24,13 +31,14 @@ const Profile = () => {
 
     const [profilePicUrl, setProfilePicUrl] = useState(updatedProfile.profilePic);
 
-    // Sync profile data with Redux
     useEffect(() => {
-        setUpdatedProfile({
-            username: profile?.username || '',
-            about: profile?.about || '',
-            profilePic: profile?.profilePic || ''
-        });
+        if (profile) {
+            setUpdatedProfile({
+                username: profile?.username || '',
+                about: profile?.about || '',
+                profilePic: profile?.profilePic || ''
+            });
+        }
     }, [profile]);
 
     useEffect(() => {
@@ -57,19 +65,23 @@ const Profile = () => {
             const formData = new FormData();
             formData.append('username', updatedProfile.username);
             formData.append('about', updatedProfile.about);
-            formData.append('profilePic', updatedProfile.profilePic);
+            if (updatedProfile.profilePic instanceof File) {
+                formData.append('profilePic', updatedProfile.profilePic);
+            }
 
             const res = await axios.put(`${USER_API_END_POINT}/updateprofile/${user._id}`, formData);
 
-            // Update Redux store
+            // Update Redux store with the new profile data
             dispatch(updateProfile({
                 username: updatedProfile.username,
                 about: updatedProfile.about,
                 profilePic: res.data.profilePic || updatedProfile.profilePic,
             }));
 
+            // Manually trigger a refresh of the profile data
+            dispatch(toggleRefresh()); // Trigger a refresh action to fetch the updated profile
+
             setIsEditing(false); // Exit editing mode
-            console.log("Profile updated successfully:", res.data);
         } catch (error) {
             console.error("Error updating profile:", error.response?.data || error.message);
         }
