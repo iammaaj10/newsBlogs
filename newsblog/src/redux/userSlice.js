@@ -1,6 +1,7 @@
 // userSlice.js
 import { createSlice } from "@reduxjs/toolkit";
 
+
 const userSlice = createSlice({
     name: "user",
     initialState: {
@@ -43,9 +44,17 @@ const userSlice = createSlice({
             {
                 state.user.addComment= action.payload
             }
+        },
+        updateProfile:(state , action)=>{
+            if (state.profile && state.profile._id === state.user._id) {
+                state.profile = {
+                    ...state.profile,
+                    ...action.payload, // Merge new profile data
+                };
+            }
         }
     },
 });
 
-export const { getUsers, getOtherUsers, getprofile, followingUpdate, updateUserBookmarks ,updateUsersLikes ,updateComments } = userSlice.actions;
+export const { getUsers, getOtherUsers, getprofile, followingUpdate, updateUserBookmarks ,updateUsersLikes ,updateComments ,updateProfile } = userSlice.actions;
 export default userSlice.reducer;

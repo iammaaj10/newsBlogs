@@ -2,19 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { IoArrowBackCircleOutline } from "react-icons/io5";
 import { Link, useParams } from 'react-router-dom';
 import Avatar from 'react-avatar';
-import Profile1 from "../assets/profile.jpg";
 import useGetProfile from '../hooks/useGetProfile';
 import { useDispatch, useSelector } from 'react-redux';
 import axios from 'axios';
 import { USER_API_END_POINT } from '../utils/constant';
-import { followingUpdate } from '../redux/userSlice';
+import { updateProfile } from '../redux/userSlice';
 import { toggleRefresh } from '../redux/blogsSlics';
 
 const Profile = () => {
-    const { user, profile } = useSelector(store => store.user)
-    const { id } = useParams()
-    const dispatch = useDispatch()
-    useGetProfile(id)
+    const { user, profile } = useSelector(store => store.user);
+    const { id } = useParams();
+    const dispatch = useDispatch();
+    useGetProfile(id);
 
     const [isEditing, setIsEditing] = useState(false);
     const [updatedProfile, setUpdatedProfile] = useState({
@@ -25,13 +24,19 @@ const Profile = () => {
 
     const [profilePicUrl, setProfilePicUrl] = useState(updatedProfile.profilePic);
 
-   
+    // Sync profile data with Redux
+    useEffect(() => {
+        setUpdatedProfile({
+            username: profile?.username || '',
+            about: profile?.about || '',
+            profilePic: profile?.profilePic || ''
+        });
+    }, [profile]);
+
     useEffect(() => {
         if (updatedProfile.profilePic && updatedProfile.profilePic instanceof File) {
             const url = URL.createObjectURL(updatedProfile.profilePic);
             setProfilePicUrl(url);
-
-            
             return () => URL.revokeObjectURL(url);
         } else {
             setProfilePicUrl(updatedProfile.profilePic);
@@ -55,125 +60,111 @@ const Profile = () => {
             formData.append('profilePic', updatedProfile.profilePic);
 
             const res = await axios.put(`${USER_API_END_POINT}/updateprofile/${user._id}`, formData);
-            dispatch(toggleRefresh());
-            setIsEditing(false);
-            console.log(res.data);
+
+            // Update Redux store
+            dispatch(updateProfile({
+                username: updatedProfile.username,
+                about: updatedProfile.about,
+                profilePic: res.data.profilePic || updatedProfile.profilePic,
+            }));
+
+            setIsEditing(false); // Exit editing mode
+            console.log("Profile updated successfully:", res.data);
         } catch (error) {
             console.error("Error updating profile:", error.response?.data || error.message);
         }
     };
 
     const followAndUnfollowHandler = async () => {
-        if (user.following.includes(id)) {
-            try {
-                axios.defaults.withCredentials = true;
-                const res = await axios.post(
-                    `${USER_API_END_POINT}/unfollow/${id}`,
-                    { id: user?._id }
-                );
-                dispatch(followingUpdate(id));
-                dispatch(toggleRefresh());
-                console.log(res);
-            } catch (error) {
-                console.error("Error:", error.response?.data || error.message);
-            }
-        } else {
-            try {
-                axios.defaults.withCredentials = true;
-                const res = await axios.post(
-                    `${USER_API_END_POINT}/follower/${id}`,
-                    { id: user?._id }
-                );
-                dispatch(followingUpdate(id));
-                dispatch(toggleRefresh());
-                console.log(res);
-            } catch (error) {
-                console.error("Error:", error.response?.data || error.message);
-            }
+        try {
+            axios.defaults.withCredentials = true;
+            const endpoint = user.following.includes(id)
+                ? `${USER_API_END_POINT}/unfollow/${id}`
+                : `${USER_API_END_POINT}/follower/${id}`;
+            await axios.post(endpoint, { id: user?._id });
+            dispatch(toggleRefresh());
+        } catch (error) {
+            console.error("Error:", error.response?.data || error.message);
         }
     };
 
     return (
-        <div className="w-[55%] ">
-            <div>
-                <div className="flex items-center py-2">
-                    <Link to="/premium" className="hover:bg-gray-200 hover:cursor-pointer p-2">
-                        <IoArrowBackCircleOutline size="24px" />
-                    </Link>
-                    <div className="ml-2">
-                        <h1 className="text-lg font-bold">{profile?.name}</h1>
-                        <p className="text-sm text-gray-500">10 Blogs</p>
-                    </div>
-                </div>
-                {/* <img
-                    src="https://imgs.search.brave.com/v8Lgjc62rJivvFtkzX91-czZPti2om6TblO7kJhZTEg/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9tZWRp/YS5nZXR0eWltYWdl/cy5jb20vaWQvMTM1/MDIzMDIzOC9waG90/by9tYWxlLWhhY2tl/cnMtZG9pbmctY29k/aW5nLW92ZXItbGFw/dG9wLWF0LXN0YXJ0/dXAtY29tcGFueS5q/cGc_cz02MTJ4NjEy/Jnc9MCZrPTIwJmM9/R0d5Umhnb2RuMDB1/MW8xalVHckFIMEcz/S1RKS3I1aUgxT3Uz/YThhYVBBaz0"
-                    alt="banner"
-                    className="rounded-md w-full h-60"
-                /> */}
-                <div className="absolute top-[70px] right-[600px] border-4 border-slate-300 rounded-full m-2">
-                    <Avatar src={profilePicUrl || Profile1} size="300" round={true} />
-                </div>
-
-                <div className="text-right p-2">
-                    {profile?._id === user?._id ? (
-                        <button
-                            onClick={() => setIsEditing(true)}
-                            className="px-2 py-2 hover:bg-gray-500 hover:scale-105 transition border border-gray-200 rounded-full font-semibold bg-slate-200"
-                        >
-                            Edit Profile
-                        </button>
-                    ) : (
-                        <button
-                            onClick={followAndUnfollowHandler}
-                            className="px-2 py-2 bg-black text-white rounded-full font-semibold"
-                        >
-                            {user?.following?.includes(id) ? "Following" : "Follow"}
-                        </button>
-                    )}
-                </div>
-
-                {isEditing && (
-                    <div className="m-3">
-                        <h2 className="text-lg font-bold">Edit Profile</h2>
-                        <input
-                            type="text"
-                            name="username"
-                            value={updatedProfile.username}
-                            onChange={handleInputChange}
-                            placeholder="Username"
-                            className="w-full p-2 mt-2 border border-gray-300 rounded"
-                        />
-                        <textarea
-                            name="about"
-                            value={updatedProfile.about}
-                            onChange={handleInputChange}
-                            placeholder="About you"
-                            className="w-full p-2 mt-2 border border-gray-300 rounded"
-                        />
-                        <input
-                            type="file"
-                            name="profilePic"
-                            onChange={(e) => setUpdatedProfile({ ...updatedProfile, profilePic: e.target.files[0] })}
-                            className="w-full mt-2"
-                        />
-                        <button
-                            onClick={handleSave}
-                            className="px-4 py-2 bg-blue-500 text-white rounded mt-3"
-                        >
-                            Save Changes
-                        </button>
-                    </div>
+        <div className="flex flex-col items-center p-5 bg-gray-100 rounded-xl shadow-md w-4/5 mx-auto mt-10">
+            <div className="flex justify-between w-full mb-5">
+                <Link to="/premium" className="text-gray-500 hover:text-gray-800">
+                    <IoArrowBackCircleOutline size="30px" />
+                </Link>
+                {profile?._id === user?._id ? (
+                    <button
+                        onClick={() => setIsEditing(!isEditing)}
+                        className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                    >
+                        {isEditing ? "Cancel" : "Edit Profile"}
+                    </button>
+                ) : (
+                    <button
+                        onClick={followAndUnfollowHandler}
+                        className={`px-4 py-2 rounded-lg ${
+                            user?.following?.includes(id)
+                                ? "bg-red-500 text-white hover:bg-red-600"
+                                : "bg-green-500 text-white hover:bg-green-600"
+                        }`}
+                    >
+                        {user?.following?.includes(id) ? "Unfollow" : "Follow"}
+                    </button>
                 )}
-
-                <div className="mt-72">
-                    <h1 className="text-lg font-bold">{profile?.name}</h1>
-                    <p className="text-md">{`@${profile?.username}`}</p>
-                </div>
-                <div className="m-3">
-                    
-                    <p className="text-md font-poppins">{`${profile?.about}`}</p>
-                </div>
             </div>
+
+            {/* Profile Picture */}
+            <Avatar
+                src={profilePicUrl || 'https://via.placeholder.com/150'}
+                size="150"
+                round={true}
+                className="border-4 border-gray-300 shadow-md"
+            />
+
+            {/* Profile Details */}
+            {!isEditing ? (
+                <div className="text-center mt-5">
+                    <h1 className="text-2xl font-bold">{profile?.username || "Username"}</h1>
+                    <p className="text-gray-600 text-lg">{profile?.about || "About section not available."}</p>
+                </div>
+            ) : (
+                <div className="mt-5 w-full max-w-md">
+                    <input
+                        type="text"
+                        name="username"
+                        value={updatedProfile.username}
+                        onChange={handleInputChange}
+                        placeholder="Username"
+                        className="w-full p-2 border border-gray-300 rounded-lg mb-3"
+                    />
+                    <textarea
+                        name="about"
+                        value={updatedProfile.about}
+                        onChange={handleInputChange}
+                        placeholder="About you"
+                        className="w-full p-2 border border-gray-300 rounded-lg mb-3"
+                    />
+                    <input
+                        type="file"
+                        name="profilePic"
+                        onChange={(e) =>
+                            setUpdatedProfile({
+                                ...updatedProfile,
+                                profilePic: e.target.files[0],
+                            })
+                        }
+                        className="w-full mb-3"
+                    />
+                    <button
+                        onClick={handleSave}
+                        className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 w-full"
+                    >
+                        Save Changes
+                    </button>
+                </div>
+            )}
         </div>
     );
 };
