@@ -94,7 +94,7 @@ const Profile = () => {
     };
 
     return (
-        <div className="w-[55%]">
+        <div className="w-[55%] ">
             <div>
                 <div className="flex items-center py-2">
                     <Link to="/premium" className="hover:bg-gray-200 hover:cursor-pointer p-2">
@@ -110,7 +110,7 @@ const Profile = () => {
                     alt="banner"
                     className="rounded-md w-full h-60"
                 /> */}
-                <div className="absolute top-[100px] right-[500px] border-4 border-white rounded-full m-2">
+                <div className="absolute top-[70px] right-[600px] border-4 border-slate-300 rounded-full m-2">
                     <Avatar src={profilePicUrl || Profile1} size="300" round={true} />
                 </div>
 
@@ -165,7 +165,7 @@ const Profile = () => {
                     </div>
                 )}
 
-                <div className="m-3">
+                <div className="mt-72">
                     <h1 className="text-lg font-bold">{profile?.name}</h1>
                     <p className="text-md">{`@${profile?.username}`}</p>
                 </div>
