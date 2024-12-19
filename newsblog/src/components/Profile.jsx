@@ -112,7 +112,7 @@ const Profile = () => {
                 {profile?._id === user?._id ? (
                     <button
                         onClick={() => setIsEditing(!isEditing)}
-                        className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                        className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-blue-600"
                     >
                         {isEditing ? "Cancel" : "Edit Profile"}
                     </button>
