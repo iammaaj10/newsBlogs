@@ -5,70 +5,84 @@ import Avatar from 'react-avatar';
 import { useDispatch, useSelector } from 'react-redux';
 import axios from 'axios';
 import { USER_API_END_POINT } from '../utils/constant';
-import { updateProfile } from '../redux/userSlice';
-import useGetProfile from '../hooks/useGetProfile';
+import { updateProfile, getprofile, followingUpdate } from '../redux/userSlice';
+import { toggleRefresh } from '../redux/blogsSlics';
 
 const Profile = () => {
-    const { user, profile } = useSelector(store => store.user);
+    const { user, profile } = useSelector((store) => store.user);
     const { id } = useParams();
     const dispatch = useDispatch();
-    useGetProfile(id);
 
     const [isEditing, setIsEditing] = useState(false);
     const [updatedProfile, setUpdatedProfile] = useState({
-        username: profile?.username || '',
-        about: profile?.about || '',
-        profilePic: profile?.profilePic || ''
+        username: '',
+        about: '',
+        profilePic: '',
     });
 
-    const [profilePicUrl, setProfilePicUrl] = useState(updatedProfile.profilePic);
+    const [profilePicUrl, setProfilePicUrl] = useState('');
 
-    // Sync profile data with Redux
+    // Fetch profile data on component load or when ID changes
     useEffect(() => {
-        setUpdatedProfile({
-            username: profile?.username || '',
-            about: profile?.about || '',
-            profilePic: profile?.profilePic || ''
-        });
-    }, [profile]);
+        const fetchProfile = async () => {
+            try {
+                const res = await axios.get(`${USER_API_END_POINT}/profile/${id}`, {
+                    withCredentials: true,
+                });
+                dispatch(getprofile(res.data.user)); // Update Redux store with fetched profile
+            } catch (error) {
+                console.error("Error fetching profile:", error.response?.data || error.message);
+            }
+        };
 
+        if (id) fetchProfile();
+    }, [id, dispatch]);
+
+    // Sync local state with Redux profile
     useEffect(() => {
-        if (updatedProfile.profilePic && updatedProfile.profilePic instanceof File) {
-            const url = URL.createObjectURL(updatedProfile.profilePic);
-            setProfilePicUrl(url);
-            return () => URL.revokeObjectURL(url);
-        } else {
-            setProfilePicUrl(updatedProfile.profilePic);
+        if (profile) {
+            setUpdatedProfile({
+                username: profile.username || '',
+                about: profile.about || '',
+                profilePic: profile.profilePic || '',
+            });
+            setProfilePicUrl(profile.profilePic || '');
         }
-    }, [updatedProfile.profilePic]);
+    }, [profile]);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setUpdatedProfile({
             ...updatedProfile,
-            [name]: value
+            [name]: value,
         });
+    };
+
+    const handleProfilePicChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setUpdatedProfile({
+                    ...updatedProfile,
+                    profilePic: reader.result, // Base64 image
+                });
+                setProfilePicUrl(reader.result);
+            };
+            reader.readAsDataURL(file);
+        }
     };
 
     const handleSave = async () => {
         try {
-            axios.defaults.withCredentials = true;
-            const formData = new FormData();
-            formData.append('username', updatedProfile.username);
-            formData.append('about', updatedProfile.about);
-            formData.append('profilePic', updatedProfile.profilePic);  // Assuming profilePic is a URL or a file
+            const res = await axios.put(
+                `${USER_API_END_POINT}/updateprofile/${user._id}`,
+                updatedProfile,
+                { withCredentials: true }
+            );
 
-            const res = await axios.put(`${USER_API_END_POINT}/updateprofile/${user._id}`, formData);
-
-            // Update Redux store with the updated profile
-            dispatch(updateProfile({
-                username: updatedProfile.username,
-                about: updatedProfile.about,
-                profilePic: res.data.user.profilePic || updatedProfile.profilePic,
-            }));
-
-            setIsEditing(false); // Exit editing mode
-            console.log("Profile updated successfully:", res.data);
+            dispatch(updateProfile(res.data.user)); // Update Redux store with updated profile
+            setIsEditing(false);
         } catch (error) {
             console.error("Error updating profile:", error.response?.data || error.message);
         }
@@ -76,14 +90,16 @@ const Profile = () => {
 
     const followAndUnfollowHandler = async () => {
         try {
-            axios.defaults.withCredentials = true;
             const endpoint = user.following.includes(id)
                 ? `${USER_API_END_POINT}/unfollow/${id}`
                 : `${USER_API_END_POINT}/follower/${id}`;
-            await axios.post(endpoint, { id: user?._id });
-            dispatch(toggleRefresh());
+
+            await axios.post(endpoint, { id: user?._id }, { withCredentials: true });
+
+            dispatch(followingUpdate(id)); // Update Redux store
+            dispatch(toggleRefresh()); // Trigger refresh for other components
         } catch (error) {
-            console.error("Error:", error.response?.data || error.message);
+            console.error("Error in follow/unfollow:", error.response?.data || error.message);
         }
     };
 
@@ -114,7 +130,6 @@ const Profile = () => {
                 )}
             </div>
 
-            {/* Profile Picture */}
             <Avatar
                 src={profilePicUrl || 'https://via.placeholder.com/150'}
                 size="150"
@@ -122,11 +137,10 @@ const Profile = () => {
                 className="border-4 border-gray-300 shadow-md"
             />
 
-            {/* Profile Details */}
             {!isEditing ? (
                 <div className="text-center mt-5">
-                    <h1 className="text-2xl font-bold">{profile?.username || "Username"}</h1>
-                    <p className="text-gray-600 text-lg">{profile?.about || "About section not available."}</p>
+                    <h1 className="text-2xl font-bold">{updatedProfile.username || "Username"}</h1>
+                    <p className="text-gray-600 text-lg">{updatedProfile.about || "About section not available."}</p>
                 </div>
             ) : (
                 <div className="mt-5 w-full max-w-md">
@@ -148,12 +162,7 @@ const Profile = () => {
                     <input
                         type="file"
                         name="profilePic"
-                        onChange={(e) =>
-                            setUpdatedProfile({
-                                ...updatedProfile,
-                                profilePic: e.target.files[0],
-                            })
-                        }
+                        onChange={handleProfilePicChange}
                         className="w-full mb-3"
                     />
                     <button
