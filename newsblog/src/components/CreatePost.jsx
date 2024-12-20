@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import Avatar from "react-avatar";
-import Profile from "../assets/profile.jpg";
 import { CiImageOn } from "react-icons/ci";
 import axios from "axios";
 import { BLOG_API_END_POINT } from "../utils/constant";
@@ -12,7 +11,7 @@ import { toggleRefresh, getisActive } from "../redux/blogsSlics";
 const CreatePost = () => {
   const [description, setDescription] = useState("");
   const [image, setImage] = useState(null);
-  const { user } = useSelector((store) => store.user);
+  const { user, profile } = useSelector((store) => store.user);
   const { isActive } = useSelector((store) => store.blogs);
   const dispatch = useDispatch();
 
@@ -25,7 +24,7 @@ const CreatePost = () => {
       const payload = {
         description: description.trim(),
         id: user._id,
-        image: image || "", 
+        image: image || "",
       };
 
       const res = await axios.post(`${BLOG_API_END_POINT}/create`, payload, {
@@ -90,7 +89,11 @@ const CreatePost = () => {
         </div>
         <div>
           <div className="flex items-center p-4">
-            <Avatar src={Profile} size="40" round={true} />
+            <Avatar
+              src={profile?.profilePic || "https://via.placeholder.com/150"}
+              size="40"
+              round={true}
+            />
             <input
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -129,7 +132,7 @@ const CreatePost = () => {
               />
               <button
                 onClick={() => setImage(null)}
-                className="mt-2 text-white px-3  py-2 rounded-full bg-black hover:bg-red-800 "
+                className="mt-2 text-white px-3 py-2 rounded-full bg-black hover:bg-red-800 "
               >
                 Remove Image
               </button>

@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import Avatar from 'react-avatar';
-import Profile from "../assets/profile.jpg";
 import { FaRegCommentAlt } from "react-icons/fa";
 import { AiOutlineLike, AiFillLike } from "react-icons/ai";
 import { CiBookmark } from "react-icons/ci";
@@ -11,7 +10,7 @@ import { BLOG_API_END_POINT, USER_API_END_POINT } from '../utils/constant';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
 import { toggleRefresh } from '../redux/blogsSlics';
-import { updateUserBookmarks, updateUsersLikes, updateComments } from '../redux/userSlice';
+import { updateUserBookmarks, updateUsersLikes } from '../redux/userSlice';
 
 const BlogPost = ({ blogs }) => {
   const [isBookmark, setBookmark] = useState(false);
@@ -19,20 +18,20 @@ const BlogPost = ({ blogs }) => {
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState("");
   const [comments, setComments] = useState(blogs?.comments || []);
-  const { user } = useSelector((store) => store.user);
+  const { user, profile } = useSelector((store) => store.user); // Include profile from Redux
   const dispatch = useDispatch();
 
-  
+  // Determine if the current user has liked the post
   useEffect(() => {
     setLiked(blogs?.likes?.includes(user?._id));
   }, [blogs?.likes, user?._id]);
 
-  
+  // Determine if the current user has bookmarked the post
   useEffect(() => {
     setBookmark(user?.Bookmarks?.includes(blogs?._id));
   }, [user?.Bookmarks, blogs?._id]);
 
-  // Handle Like/Dislike
+  // Like/Dislike Handler
   const likeDislikeHandler = async () => {
     try {
       const res = await axios.put(
@@ -54,7 +53,7 @@ const BlogPost = ({ blogs }) => {
     }
   };
 
-  // Handle Bookmark
+  // Bookmark Handler
   const bookmarkHandler = async () => {
     try {
       const res = await axios.put(
@@ -76,7 +75,7 @@ const BlogPost = ({ blogs }) => {
     }
   };
 
-  // Handle Delete Post
+  // Delete Post Handler
   const deletePostHandler = async () => {
     try {
       const res = await axios.delete(`${BLOG_API_END_POINT}/delete/${blogs?._id}`, {
@@ -90,8 +89,7 @@ const BlogPost = ({ blogs }) => {
     }
   };
 
-
-
+  // Post Comment Handler
   const postCommentHandler = async () => {
     if (!commentText.trim()) {
       toast.error("Comment cannot be empty!");
@@ -106,7 +104,7 @@ const BlogPost = ({ blogs }) => {
       );
 
       if (res.data.success) {
-        setComments(res.data.blog.comments); // Use populated comments from response
+        setComments(res.data.blog.comments); // Update comments
         setCommentText("");
         toast.success("Comment added successfully!");
       } else {
@@ -118,12 +116,13 @@ const BlogPost = ({ blogs }) => {
     }
   };
 
+  // Fetch Blog Comments on Component Mount
   useEffect(() => {
     const fetchBlog = async () => {
       try {
         const res = await axios.get(`${BLOG_API_END_POINT}/getBlogById/${blogs?._id}`);
         if (res.data.success) {
-          setComments(res.data.blog.comments); // Use populated comments
+          setComments(res.data.blog.comments);
         } else {
           toast.error("Failed to fetch blog.");
         }
@@ -139,11 +138,16 @@ const BlogPost = ({ blogs }) => {
   return (
     <div className="p-2 border-b border-gray-300">
       <div className="flex gap-2">
-        <Avatar src={Profile} size="40" round={true} />
+        {/* Use profile picture from Redux or fallback to the user's original profile picture */}
+        <Avatar
+          src={profile?.profilePic || "https://via.placeholder.com/150"}
+          size="40"
+          round={true}
+        />
         <div className="w-full">
           <div className="flex items-center gap-2">
             <h1 className="font-bold text-lg">{blogs?.userDetails[0]?.name}</h1>
-            <p className="text-sm">{blogs?.userDetails[0]?.username} · 1m</p>
+            <p className="text-sm">@{blogs?.userDetails[0]?.username} · 1m</p>
           </div>
           <p>{blogs?.description}</p>
           {blogs?.image && (
@@ -211,9 +215,8 @@ const BlogPost = ({ blogs }) => {
                 {comments.map((comment, index) => (
                   <div key={index} className="p-2 border-b">
                     <p className="font-bold">
-                      {comment?.postedby?.name ? comment.postedby.name : "Anonymous"}
+                      {comment?.postedby?.name || "Anonymous"}
                     </p>
-
                     <p>{comment.text}</p>
                   </div>
                 ))}

@@ -96,8 +96,8 @@ const Profile = () => {
 
             await axios.post(endpoint, { id: user?._id }, { withCredentials: true });
 
-            dispatch(followingUpdate(id)); // Update Redux store
-            dispatch(toggleRefresh()); // Trigger refresh for other components
+            dispatch(followingUpdate(id)); 
+            dispatch(toggleRefresh()); 
         } catch (error) {
             console.error("Error in follow/unfollow:", error.response?.data || error.message);
         }
@@ -139,6 +139,7 @@ const Profile = () => {
 
             {!isEditing ? (
                 <div className="text-center mt-5">
+                    <p className='font-poppins text-blue-500 font-bold text-lg mt-2'>UserName</p>
                     <h1 className="text-2xl font-bold">{updatedProfile.username || "Username"}</h1>
                     <p className='font-poppins text-blue-500 font-bold text-lg mt-2'>About section</p>
                     <p className="text-gray-600 text-lg">{updatedProfile.about || "About section not available."}</p>
