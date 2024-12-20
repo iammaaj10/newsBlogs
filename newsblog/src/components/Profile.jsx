@@ -104,7 +104,7 @@ const Profile = () => {
     };
 
     return (
-        <div className="flex flex-col items-center p-5 bg-gray-100 rounded-xl shadow-md w-4/5 mx-auto mt-10">
+        <div className="flex flex-col items-center p-5 bg-slate-300 rounded-xl shadow-md w-4/5 mx-auto mt-10">
             <div className="flex justify-between w-full mb-5">
                 <Link to="/premium" className="text-gray-500 hover:text-gray-800">
                     <IoArrowBackCircleOutline size="30px" />
@@ -134,15 +134,15 @@ const Profile = () => {
                 src={profilePicUrl || 'https://via.placeholder.com/150'}
                 size="150"
                 round={true}
-                className="border-4 border-gray-300 shadow-md"
+                className="border-3 border-slate-400 shadow-lg"
             />
 
             {!isEditing ? (
                 <div className="text-center mt-5">
                     <p className='font-poppins text-blue-500 font-bold text-lg mt-2'>UserName</p>
-                    <h1 className="text-2xl font-bold">{updatedProfile.username || "Username"}</h1>
+                    <h1 className="text-2xl font-bold ">{updatedProfile.username || "Username"}</h1>
                     <p className='font-poppins text-blue-500 font-bold text-lg mt-2'>About section</p>
-                    <p className="text-gray-600 text-lg">{updatedProfile.about || "About section not available."}</p>
+                    <p className="text-black text-lg font-poppins">{updatedProfile.about || "About section not available."}</p>
                 </div>
             ) : (
                 <div className="mt-5 w-full max-w-md">
