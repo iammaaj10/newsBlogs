@@ -138,9 +138,8 @@ const BlogPost = ({ blogs }) => {
   return (
     <div className="p-2 border-b border-gray-300">
       <div className="flex gap-2">
-        {/* Use profile picture from Redux or fallback to the user's original profile picture */}
         <Avatar
-          src={profile?.profilePic || "https://via.placeholder.com/150"}
+          src={profile?.profilePic || blogs?.userDetails[0]?.profilePic || 'https://via.placeholder.com/150'}
           size="40"
           round={true}
         />
