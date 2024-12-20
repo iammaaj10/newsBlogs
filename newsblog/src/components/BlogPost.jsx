@@ -146,7 +146,8 @@ const BlogPost = ({ blogs }) => {
         <div className="w-full">
           <div className="flex items-center gap-2">
             <h1 className="font-bold text-lg">{blogs?.userDetails[0]?.name}</h1>
-            <p className="text-sm">@{blogs?.userDetails[0]?.username} · 1m</p>
+            <p className="text-sm">@{user?.username || blogs?.userDetails[0]?.username} · 1m</p>
+
           </div>
           <p>{blogs?.description}</p>
           {blogs?.image && (
