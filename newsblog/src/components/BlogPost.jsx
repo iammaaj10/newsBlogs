@@ -139,7 +139,11 @@ const BlogPost = ({ blogs }) => {
     <div className="p-2 border-b border-gray-300">
       <div className="flex gap-2">
         <Avatar
-          src={profile?.profilePic || blogs?.userDetails[0]?.profilePic || 'https://via.placeholder.com/150'}
+          src={
+            blogs?.userDetails[0]?._id === user?._id
+              ? profile?.profilePic || 'https://via.placeholder.com/150'
+              : blogs?.userDetails[0]?.profilePic || 'https://via.placeholder.com/150'
+          }
           size="40"
           round={true}
         />
