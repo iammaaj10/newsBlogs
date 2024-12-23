@@ -139,20 +139,16 @@ const BlogPost = ({ blogs }) => {
     <div className="p-2 border-b border-gray-300">
       <div className="flex gap-2">
         <Avatar
-          src={
-            blogs?.userDetails[0]?._id === user?._id
-              ? profile?.profilePic || 'https://via.placeholder.com/150'
-              : blogs?.userDetails[0]?.profilePic || 'https://via.placeholder.com/150'
-          }
+          src={blogs?.userDetails[0]?.profilePic || 'https://via.placeholder.com/150'}
           size="40"
           round={true}
         />
         <div className="w-full">
           <div className="flex items-center gap-2">
-            <h1 className="font-bold text-lg">{blogs?.userDetails[0]?.name }</h1>
+            <h1 className="font-bold text-lg">{blogs?.userDetails[0]?.name}</h1>
             <p className="text-sm">@{
-            blogs?.userDetails[0]?._id === user?._id ?
-            profile?.username || blogs?.userDetails[0]?.username : blogs?.userDetails[0]?.username} · 1m</p>
+              blogs?.userDetails[0]?._id === user?._id ?
+                profile?.username || blogs?.userDetails[0]?.username : blogs?.userDetails[0]?.username} · 1m</p>
 
           </div>
           <p>{blogs?.description}</p>

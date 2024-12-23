@@ -71,18 +71,16 @@ const CreatePost = () => {
         <div className="flex items-center justify-between">
           <div
             onClick={foryou}
-            className={`text-center hover:bg-gray-200 w-full px-4 py-3 cursor-pointer hover:rounded-lg ${
-              isActive ? "border-b-4 border-orange-500" : ""
-            }`}
+            className={`text-center hover:bg-gray-200 w-full px-4 py-3 cursor-pointer hover:rounded-lg ${isActive ? "border-b-4 border-orange-500" : ""
+              }`}
           >
             <h1 className="font-bold text-gray-400 text-lg">News For You</h1>
           </div>
 
           <div
             onClick={followinghandler}
-            className={`text-center hover:bg-gray-200 w-full px-4 py-3 cursor-pointer hover:rounded-lg ${
-              !isActive ? "border-b-4 border-orange-500" : ""
-            }`}
+            className={`text-center hover:bg-gray-200 w-full px-4 py-3 cursor-pointer hover:rounded-lg ${!isActive ? "border-b-4 border-orange-500" : ""
+              }`}
           >
             <h1 className="font-bold text-gray-400 text-lg">Following</h1>
           </div>
@@ -90,7 +88,7 @@ const CreatePost = () => {
         <div>
           <div className="flex items-center p-4">
             <Avatar
-              src={profile?.profilePic || "https://via.placeholder.com/150"}
+              src={user?.profilePic || "https://via.placeholder.com/150"}
               size="40"
               round={true}
             />
