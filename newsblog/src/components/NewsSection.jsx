@@ -7,13 +7,14 @@ const NewsSection = () => {
 
   useEffect(() => {
     const fetchNews = async () => {
-      const url = 'https://real-time-news-data.p.rapidapi.com/search?query=Elon%20Musk&limit=500&time_published=anytime&country=US&lang=en';
+      const url =
+        'https://real-time-news-data.p.rapidapi.com/topic-news-by-section?topic=TECHNOLOGY&section=CAQiW0NCQVNQZ29JTDIwdk1EZGpNWFlTQW1WdUdnSlZVeUlQQ0FRYUN3b0pMMjB2TURKdFpqRnVLaGtLRndvVFIwRkVSMFZVWDFORlExUkpUMDVmVGtGTlJTQUJLQUEqKggAKiYICiIgQ0JBU0Vnb0lMMjB2TURkak1YWVNBbVZ1R2dKVlV5Z0FQAVAB&limit=500&country=US&lang=en';
       const options = {
         method: 'GET',
         headers: {
           'x-rapidapi-key': '036751a1bamshf51a274e719655ep1a1063jsnb095ccbc475c',
-          'x-rapidapi-host': 'real-time-news-data.p.rapidapi.com'
-        }
+          'x-rapidapi-host': 'real-time-news-data.p.rapidapi.com',
+        },
       };
 
       try {
@@ -65,7 +66,7 @@ const NewsSection = () => {
 
   return (
     <div className="p-5 max-w-screen-lg mx-auto">
-      <h1 className="text-3xl font-bold mb-6 text-center">News</h1>
+      <h1 className="text-3xl font-bold mb-6 text-center">Technology News</h1>
       <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
         {news.map((article, index) => (
           <li key={index} className="border rounded-lg shadow-md overflow-hidden p-4">
