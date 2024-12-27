@@ -153,7 +153,7 @@ const BlogPost = ({ blogs }) => {
             <p className="text-sm">
               @{
                 blogs?.userDetails[0]?._id === user?._id
-                  ? (profile?.username || blogs?.userDetails[0]?.username) 
+                  ? profile?.username 
                   : blogs?.userDetails[0]?.username 
               } · 1m
             </p>
