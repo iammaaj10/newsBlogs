@@ -152,8 +152,8 @@ const BlogPost = ({ blogs }) => {
             <h1 className="font-bold text-lg">{blogs?.userDetails[0]?.name}</h1>
             <p className="text-sm">
               @{blogs?.userDetails[0]?._id === user?._id
-                ? (profile?.username || blogs?.userDetails[0]?.username) // Logged-in user's username
-                : blogs?.userDetails[0]?.username // Other user's username
+                ? user?.username 
+                : blogs?.userDetails[0]?.username
               } · 1m
             </p>
 
