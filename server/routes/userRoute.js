@@ -1,5 +1,5 @@
 import express from "express";
-import { Bookmarks, follower, getOtherUsers, Logout, profile, Register, unfollow ,updateProfile } from "../controllers/userControllers.js";
+import { Bookmarks, follower, getOtherUsers, Logout, profile, Register, unfollow ,updateProfile  ,askAI} from "../controllers/userControllers.js";
 import { Login } from "../controllers/userControllers.js";
 import isAuthenticated from "../config/Auth.js";
 
@@ -14,6 +14,7 @@ router.route("/otheruser/:id").get(isAuthenticated,getOtherUsers)
 router.route("/follower/:id").post(isAuthenticated,follower)
 router.route("/unfollow/:id").post(isAuthenticated,unfollow)
 router.route("/updateprofile/:id").put(updateProfile)
+router.route("/ask").post(askAI)
 
  
 
