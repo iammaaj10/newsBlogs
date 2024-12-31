@@ -287,15 +287,12 @@ export const updateProfile = async (req, res) => {
         user.username = username || user.username;
         user.about = about || user.about;
 
-        // Handle profilePic if it's a file upload
         if (profilePic && profilePic !== user.profilePic) {
             user.profilePic = profilePic; // Assuming you are sending the URL of the profile picture
         }
 
-        // Save the updated user document to the database
         await user.save();
 
-        // Send the updated user data in the response
         return res.status(200).json({
             message: "Profile updated successfully",
             user,  // Send updated user data
