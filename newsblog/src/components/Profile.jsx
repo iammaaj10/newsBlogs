@@ -169,7 +169,7 @@ const Profile = () => {
                     />
                     <button
                         onClick={handleSave}
-                        className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-800 w-full"
+                        className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-green-800 w-full"
                     >
                         Save Changes
                     </button>
