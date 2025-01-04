@@ -112,7 +112,7 @@ const Footer = () => {
 
       <div className='mt-5 p-2 text-center'>
         <p className='text-violet-700 font-bold font-poppins'>
-          Copyright &copy; 2024 Designed by <span className="text-gray-400 uppercase">maaj</span>
+          Copyright &copy; 2025 Designed by <span className="text-gray-400 uppercase">maaj</span>
         </p>
       </div>
 
