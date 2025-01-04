@@ -52,7 +52,7 @@ const Footer = () => {
         <div className='max-w-xl'>
           <h1 className='text-violet-700 font-bold font-poppins text-xl mb-2'>About Us</h1>
           <p className='text-violet-700 text-md font-poppins'>
-            NewsBlogs company started in 2024 with the ambition to provide the news and upload your blogs on our platform. Let's create a beautiful community and make your optimistic thoughts and put them on our platform and create a healthy environment...
+            NewsBlogs company started in 2024 with the ambition to provide the news and upload your blogs on our platform. Let's create a knowledgeable community and make your optimistic thoughts and put them on our platform and create a healthy environment...
           </p>
         </div>
 
