@@ -116,7 +116,6 @@ const Footer = () => {
         </p>
       </div>
 
-      {/* Show SignUp Modal when clicked */}
       {showSignUp && <Login onClose1={handleSignUpClick1} />}
     </div>
   );
