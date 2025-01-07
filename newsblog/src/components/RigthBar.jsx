@@ -58,7 +58,7 @@ const RightBar = ({ otherUsers }) => {
                         </div>
 
                         <Link to={`/premium/profile/${filteredUser._id}`}>
-                            <button className="bg-black text-white font-semibold py-1 px-4 rounded-full">
+                            <button className="bg-black text-white font-semibold py-1 px-4 rounded-full ">
                                 Profile
                             </button>
                         </Link>
@@ -85,7 +85,7 @@ const RightBar = ({ otherUsers }) => {
                         </div>
 
                         <Link to={`/premium/profile/${user?._id}`}>
-                            <button className="bg-black text-white font-semibold py-1 px-4 rounded-full">
+                            <button className="bg-black text-white font-semibold py-1 px-4 rounded-full hover:bg-orange-500">
                                 Profile
                             </button>
                         </Link>
