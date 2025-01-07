@@ -69,7 +69,7 @@ const RightBar = ({ otherUsers }) => {
 
             {/* Follow Section */}
             <div className="p-4 bg-gray-200 rounded-xl outline-none w-full my-4">
-                <h1 className="text-lg font-bold font-poppins">Follow to Explore More</h1>
+                <h1 className="text-lg font-bold font-poppins">Connect to people!</h1>
                 {otherUsers?.map((user) => (
                     <div key={user?._id} className="flex items-center justify-between my-3">
                         {/* User Info */}
