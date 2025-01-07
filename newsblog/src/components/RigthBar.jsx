@@ -26,8 +26,8 @@ const RightBar = ({ otherUsers }) => {
     return (
         <div className="w-[20%]">
             {/* Search Bar */}
-            <div className="flex items-center bg-gray-200 rounded-full outline-none px-2">
-                <CiSearch size="20px" onClick={searchById} className="cursor-pointer" />
+            <div className="flex items-center bg-gray-300 rounded-full outline-none px-2">
+                <CiSearch size="20px" onClick={searchById} className="cursor-pointer hover:scale-125 hover:bg-orange-500 rounded-full" />
                 <input
                     type="text"
                     placeholder="Search"
@@ -48,6 +48,7 @@ const RightBar = ({ otherUsers }) => {
                                 src={filteredUser.profilePic || 'https://via.placeholder.com/150'}
                                 size="40"
                                 round={true}
+                                
                             />
                             <div className="ml-2">
                                 <h1 className="font-semibold">{filteredUser.name}</h1>
