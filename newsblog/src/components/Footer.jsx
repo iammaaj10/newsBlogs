@@ -60,7 +60,7 @@ const Footer = () => {
           <h1 className='text-violet-700 font-bold font-poppins text-xl mb-2'>Contact Us</h1>
           <div className="flex flex-col gap-3">
             <i className="fa-solid fa-phone text-violet-700 font-md"> 9130304068</i>
-            <i className="fa-solid fa-envelope text-violet-700 font-md"> maajb1122@gmail.com</i>
+            <i className="fa-solid fa-envelope text-violet-700 font-md lowercase"> maajb1122@gmail.com</i>
           </div>
 
           <div className="flex mt-5">
