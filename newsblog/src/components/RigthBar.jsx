@@ -72,7 +72,7 @@ const RightBar = ({ otherUsers }) => {
                 <h1 className="text-lg font-bold font-poppins">Connect to people!</h1>
                 {otherUsers?.map((user) => (
                     <div key={user?._id} className="flex items-center justify-between my-3">
-                        {/* User Info */}
+                       
                         <div className="flex items-center">
                             <Avatar
                                 src={user?.profilePic || 'https://via.placeholder.com/150'}
