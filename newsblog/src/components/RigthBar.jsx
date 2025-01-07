@@ -25,7 +25,7 @@ const RightBar = ({ otherUsers }) => {
 
     return (
         <div className="w-[20%]">
-            {/* Search Bar */}
+            
             <div className="flex items-center bg-gray-300 rounded-full outline-none px-2">
                 <CiSearch size="20px" onClick={searchById} className="cursor-pointer hover:scale-125 hover:bg-orange-500 rounded-full" />
                 <input
@@ -37,7 +37,7 @@ const RightBar = ({ otherUsers }) => {
                 />
             </div>
 
-            {/* Search Result */}
+           
             {filteredUser && (
                 <div className="p-4 bg-gray-200 rounded-xl outline-none w-full my-4">
                     <h1 className="text-lg font-bold font-poppins">Search Result</h1>
