@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
 import { FaXTwitter } from "react-icons/fa6";
 import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css'; // Import Toastify styles
+import 'react-toastify/dist/ReactToastify.css'; 
 import Login from './Login';
 
 const Footer = () => {
   const [showSignUp, setShowSignUp] = useState(false);
-  const [feedback, setFeedback] = useState(''); // State for feedback
+  const [feedback, setFeedback] = useState(''); 
 
-  // Function to handle opening the sign-up form
+ 
   const handleSignUpClick = () => {
     setShowSignUp(true);
   };
