@@ -15,10 +15,16 @@ router.route("/follower/:id").post(isAuthenticated,follower)
 router.route("/unfollow/:id").post(isAuthenticated,unfollow)
 router.route("/updateprofile/:id").put(updateProfile)
 router.route("/ask").post(askAI)
-router.route("/notifications").post(isAuthenticated, createNotification);
-router.route("/notifications").get(isAuthenticated, getNotifications);
-router.route("/notifications/:id").get(isAuthenticated, getNotifications);
-router.route("/cleanup-notifications").delete(isAuthenticated, cleanupNotifications);
+router.route('/notifications')
+  .get(isAuthenticated, getNotifications) // Get all notifications for the user
+  .post(isAuthenticated, createNotification); // Create a new notification
+
+router.route('/notifications/:id')
+  .get(isAuthenticated, getNotifications); // Get notifications by user ID
+
+router.route('/cleanup-notifications')
+  .delete(isAuthenticated, cleanupNotifications); // Cleanup old notifications
+
 
 export default router;
 

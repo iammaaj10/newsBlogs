@@ -52,7 +52,7 @@ const PremiumNav = () => {
           <p className='text-lg font-semibold'>Explore</p>
         </div>
         <NavLink
-          to="/notifications"
+          to="/premium/notifications" // Correct path
           className={({ isActive }) =>
             `flex items-center gap-2 p-2 my-3 hover:bg-gray-300 hover:cursor-pointer rounded-md ${isActive ? "text-gray-500" : "text-black"}`
           }

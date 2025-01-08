@@ -2,26 +2,27 @@ import React, { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import axios from 'axios';
 import { USER_API_END_POINT } from '../utils/constant';
+import { useNavigate } from 'react-router-dom';
 
 const Notification = () => {
   const [notifications, setNotifications] = useState([]);
-  const { user } = useSelector(store => store.user);
+  const { user } = useSelector((store) => store.user);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (user && user._id) {
       fetchNotifications();
-      // Fetch notifications every minute to check for expired ones
+      // Fetch notifications every minute
       const interval = setInterval(fetchNotifications, 60000);
       return () => clearInterval(interval);
     }
-  }, []);
+  }, [user]);
 
   const fetchNotifications = async () => {
     try {
       const response = await axios.get(`${USER_API_END_POINT}/notifications/${user._id}`);
-      // Filter out notifications older than 1 hour
       const currentTime = new Date();
-      const filteredNotifications = response.data.filter(notification => {
+      const filteredNotifications = response.data.filter((notification) => {
         const notificationTime = new Date(notification.createdAt);
         const timeDiff = currentTime - notificationTime;
         return timeDiff < 3600000; // 1 hour in milliseconds
@@ -52,15 +53,11 @@ const Notification = () => {
         <p className="text-gray-500">No new notifications</p>
       ) : (
         <div className="space-y-4">
-          {notifications && notifications.map((notification) => (
+          {notifications.map((notification) => (
             <div
-              key={notification?._id}
+              key={notification._id}
               className="bg-white p-4 rounded-lg shadow-md hover:bg-gray-50 transition-colors"
               onClick={() => {
-                // Import and use useNavigate hook at the top level
-                const navigate = useNavigate();
-                
-                // Navigate based on notification type
                 if (notification.type === 'like' || notification.type === 'comment') {
                   navigate(`/blog/${notification.blog._id}`);
                 } else if (notification.type === 'follow') {
@@ -68,11 +65,9 @@ const Notification = () => {
                 }
               }}
             >
-              <p className="text-gray-800">
-                {getNotificationMessage(notification)}
-              </p>
+              <p className="text-gray-800">{getNotificationMessage(notification)}</p>
               <p className="text-sm text-gray-500 mt-1">
-                {new Date(notification?.createdAt).toLocaleString()}
+                {new Date(notification.createdAt).toLocaleString()}
               </p>
             </div>
           ))}

@@ -356,75 +356,65 @@ export const askAI = async (req, res) => {
 
 // Get notifications for a user
 export const getNotifications = async (req, res) => {
-  try {
-    // Get user ID from authenticated user rather than URL params
-    const userId = req.user._id;
-
-    // Find notifications for this user, populate sender and blog details
-    const notifications = await Notification.find({ toUser: userId })
-      .populate('fromUser', 'username')
-      .populate('blog', 'title')
-      .sort({ createdAt: -1 }); // Sort by newest first
-
-    return res.status(200).json(notifications);
-
-  } catch (error) {
-    console.error("Error fetching notifications:", error);
-    return res.status(500).json({
-      message: "Error fetching notifications", 
-      success: false
-    });
-  }
-};
-
-// Create a new notification
-export const createNotification = async (req, res) => {
-  try {
-    const { toUserId, type, blogId } = req.body;
-    const fromUserId = req.user._id; // Get sender's ID from auth middleware
-
-    // Create notification
-    const notification = await Notification.create({
-      type,
-      fromUser: fromUserId,
-      toUser: toUserId,
-      blog: blogId, // Only for like/comment notifications
-      createdAt: new Date()
-    });
-
-    return res.status(201).json({
-      success: true,
-      notification
-    });
-
-  } catch (error) {
-    console.error("Error creating notification:", error);
-    return res.status(500).json({
-      message: "Error creating notification",
-      success: false
-    });
-  }
-};
-
-// Delete notifications older than 1 hour
-export const cleanupNotifications = async (req, res) => {
-  try {
-    const oneHourAgo = new Date(Date.now() - 3600000);
-    
-    await Notification.deleteMany({
-      createdAt: { $lt: oneHourAgo }
-    });
-
-    return res.status(200).json({
-      success: true,
-      message: "Old notifications cleaned up"
-    });
-
-  } catch (error) {
-    console.error("Error cleaning up notifications:", error);
-    return res.status(500).json({
-      message: "Error cleaning up notifications",
-      success: false
-    });
-  }
-};
+    try {
+      const userId = req.user._id;
+      const notifications = await Notification.find({ toUser: userId })
+        .populate('fromUser', 'username')
+        .populate('blog', 'title')
+        .sort({ createdAt: -1 });
+  
+      return res.status(200).json(notifications);
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+      return res.status(500).json({
+        message: 'Error fetching notifications',
+        success: false,
+      });
+    }
+  };
+  
+  // Create a new notification
+  export const createNotification = async (req, res) => {
+    try {
+      const { toUserId, type, blogId } = req.body;
+      const fromUserId = req.user._id;
+  
+      const notification = await Notification.create({
+        type,
+        fromUser: fromUserId,
+        toUser: toUserId,
+        blog: blogId,
+        createdAt: new Date(),
+      });
+  
+      return res.status(201).json({
+        success: true,
+        notification,
+      });
+    } catch (error) {
+      console.error('Error creating notification:', error);
+      return res.status(500).json({
+        message: 'Error creating notification',
+        success: false,
+      });
+    }
+  };
+  
+  // Delete notifications older than 1 hour
+  export const cleanupNotifications = async (req, res) => {
+    try {
+      const oneHourAgo = new Date(Date.now() - 3600000);
+      await Notification.deleteMany({ createdAt: { $lt: oneHourAgo } });
+  
+      return res.status(200).json({
+        success: true,
+        message: 'Old notifications cleaned up',
+      });
+    } catch (error) {
+      console.error('Error cleaning up notifications:', error);
+      return res.status(500).json({
+        message: 'Error cleaning up notifications',
+        success: false,
+      });
+    }
+  };

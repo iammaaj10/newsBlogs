@@ -16,6 +16,8 @@ import { Provider } from "react-redux";
 import store from './redux/store.js';
 import { PersistGate } from 'redux-persist/integration/react';
 import { persistStore } from 'redux-persist';
+import Notification from './components/Notification.jsx';
+
 
 let persistor = persistStore(store);
 
@@ -54,6 +56,10 @@ const router = createBrowserRouter(
         {
           path: 'profile/:id',
           element: <Profile />,
+        },
+        {
+          path: 'notifications', 
+          element: <Notification />,
         },
       ],
     },
