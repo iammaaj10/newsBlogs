@@ -357,13 +357,31 @@ export const askAI = async (req, res) => {
 // Get notifications for a user
 export const getNotifications = async (req, res) => {
     try {
-      const userId = req.user._id;
+      const userId = req.params.id;
+  
+      if (!userId) {
+        return res.status(400).json({
+          message: 'User ID is required',
+          success: false,
+        });
+      }
+  
       const notifications = await Notification.find({ toUser: userId })
         .populate('fromUser', 'username')
         .populate('blog', 'title')
         .sort({ createdAt: -1 });
   
-      return res.status(200).json(notifications);
+      if (!notifications.length) {
+        return res.status(404).json({
+          message: 'No notifications found',
+          success: false,
+        });
+      }
+  
+      return res.status(200).json({
+        success: true,
+        notifications,
+      });
     } catch (error) {
       console.error('Error fetching notifications:', error);
       return res.status(500).json({
@@ -377,7 +395,21 @@ export const getNotifications = async (req, res) => {
   export const createNotification = async (req, res) => {
     try {
       const { toUserId, type, blogId } = req.body;
-      const fromUserId = req.user._id;
+      const fromUserId = req.user?._id;
+  
+      if (!fromUserId) {
+        return res.status(401).json({
+          message: 'Unauthorized - User not authenticated',
+          success: false,
+        });
+      }
+  
+      if (!toUserId || !type) {
+        return res.status(400).json({
+          message: 'Missing required fields: toUserId or type',
+          success: false,
+        });
+      }
   
       const notification = await Notification.create({
         type,
@@ -400,10 +432,11 @@ export const getNotifications = async (req, res) => {
     }
   };
   
-  // Delete notifications older than 1 hour
+  // Cleanup notifications older than 1 hour
   export const cleanupNotifications = async (req, res) => {
     try {
       const oneHourAgo = new Date(Date.now() - 3600000);
+  
       await Notification.deleteMany({ createdAt: { $lt: oneHourAgo } });
   
       return res.status(200).json({

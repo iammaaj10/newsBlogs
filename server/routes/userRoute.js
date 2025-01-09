@@ -16,14 +16,14 @@ router.route("/unfollow/:id").post(isAuthenticated,unfollow)
 router.route("/updateprofile/:id").put(updateProfile)
 router.route("/ask").post(askAI)
 router.route('/notifications')
-  .get( getNotifications) 
-  .post( createNotification); 
+  .get( getNotifications) // Get all notifications for the user
+  .post( createNotification); // Create a new notification
 
 router.route('/notifications/:id')
-  .get( getNotifications); 
+  .get( getNotifications); // Get notifications by user ID
 
 router.route('/cleanup-notifications')
-  .delete( cleanupNotifications); 
+  .delete( cleanupNotifications); // Cleanup old notifications
 
 
 export default router;
