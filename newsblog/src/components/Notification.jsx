@@ -17,6 +17,15 @@ const Notification = () => {
       return () => clearInterval(interval);
     }
   }, [user]);
+  const cleanupNotifications = async () => {
+    try {
+      await axios.delete(`${USER_API_END_POINT}/cleanup-notifications`);
+      // Refresh notifications after cleanup
+      fetchNotifications();
+    } catch (error) {
+      console.error('Error cleaning up notifications:', error);
+    }
+  };
 
   const fetchNotifications = async () => {
     try {
@@ -53,10 +62,10 @@ const Notification = () => {
         <p className="text-gray-500">No new notifications</p>
       ) : (
         <div className="space-y-4">
-          {notifications.map((notification) => (
+          {notifications && notifications.length > 0 && notifications.map((notification) => (
             <div
               key={notification._id}
-              className="bg-white p-4 rounded-lg shadow-md hover:bg-gray-50 transition-colors"
+              className="bg-white p-4 rounded-lg shadow-md hover:bg-gray-50 transition-colors cursor-pointer"
               onClick={() => {
                 if (notification.type === 'like' || notification.type === 'comment') {
                   navigate(`/blog/${notification.blog._id}`);
@@ -65,9 +74,12 @@ const Notification = () => {
                 }
               }}
             >
-              <p className="text-gray-800">{getNotificationMessage(notification)}</p>
+              <p className="text-gray-800">
+                {notification.fromUser && notification.fromUser.username && 
+                 getNotificationMessage(notification)}
+              </p>
               <p className="text-sm text-gray-500 mt-1">
-                {new Date(notification.createdAt).toLocaleString()}
+                {notification.createdAt && new Date(notification.createdAt).toLocaleString()}
               </p>
             </div>
           ))}
@@ -78,3 +90,4 @@ const Notification = () => {
 };
 
 export default Notification;
+
