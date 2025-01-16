@@ -1,8 +1,10 @@
 import { User } from "../models/userSchema.js";
 import bcryptjs from "bcryptjs";
-import  jwt  from "jsonwebtoken";
+import jwt from "jsonwebtoken";
 import { Blog } from "../models/blogsSchema.js";
 import axios from "axios";
+import mongoose from "mongoose";
+import { Notification } from "../models/notificationSchema.js";
 
 
 export const Register = async (req, res) => {
@@ -354,100 +356,165 @@ export const askAI = async (req, res) => {
   }
 };
 
-// Get notifications for a user
+
+
+// Get Notifications
 export const getNotifications = async (req, res) => {
-    try {
-      const userId = req.params.id;
-  
-      if (!userId) {
-        return res.status(400).json({
-          message: 'User ID is required',
-          success: false,
-        });
-      }
-  
-      const notifications = await Notification.find({ toUser: userId })
-        .populate('fromUser', 'username')
-        .populate('blog', 'title')
-        .sort({ createdAt: -1 });
-  
-      if (!notifications.length) {
-        return res.status(404).json({
-          message: 'No notifications found',
-          success: false,
-        });
-      }
-  
+  try {
+    const userId = req.params.id;
+    
+    console.log('Fetching notifications for userId:', userId);
+
+    // Validate user ID
+    if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({
+        message: 'Invalid or missing User ID',
+        success: false,
+      });
+    }
+
+    // Check if user exists
+    const userExists = await User.findById(userId);
+    if (!userExists) {
+      return res.status(404).json({
+        message: 'User not found',
+        success: false,
+      });
+    }
+
+    // Fetch notifications for the user
+    const notifications = await Notification.find({ 
+      toUser: userId,
+      // Only fetch notifications less than 1 hour old
+      createdAt: { $gt: new Date(Date.now() - 3600000) }
+    })
+    .populate('fromUser', 'username')
+    .populate('blog', 'title')
+    .sort({ createdAt: -1 })
+    .lean();
+
+    // Return the notifications directly as an array to match frontend expectations
+    return res.status(200).json(notifications);
+    
+  } catch (error) {
+    console.error('Error fetching notifications:', {
+      message: error.message,
+      stack: error.stack,
+      userId: req.params.id
+    });
+
+    return res.status(500).json([]);  // Return empty array on error to match frontend expectations
+  }
+};
+
+// Create Notification
+export const createNotification = async (req, res) => {
+  try {
+    const { toUserId, type, blogId } = req.body;
+    const fromUserId = req.user?._id;
+
+    // Validate user authentication
+    if (!fromUserId || !mongoose.Types.ObjectId.isValid(fromUserId)) {
+      return res.status(401).json({
+        message: 'Unauthorized - Invalid or missing user authentication',
+        success: false,
+      });
+    }
+
+    // Validate toUserId
+    if (!toUserId || !mongoose.Types.ObjectId.isValid(toUserId)) {
+      return res.status(400).json({
+        message: 'Invalid or missing toUserId',
+        success: false,
+      });
+    }
+
+    // Validate blogId if provided
+    if (blogId && !mongoose.Types.ObjectId.isValid(blogId)) {
+      return res.status(400).json({
+        message: 'Invalid blogId',
+        success: false,
+      });
+    }
+
+    // Validate notification type
+    if (!type || !['like', 'comment', 'follow'].includes(type)) {
+      return res.status(400).json({
+        message: 'Invalid or missing notification type',
+        success: false,
+      });
+    }
+
+    // Check if the recipient user exists
+    const toUser = await User.findById(toUserId);
+    if (!toUser) {
+      return res.status(404).json({
+        message: 'Recipient user not found',
+        success: false,
+      });
+    }
+
+    // Skip notification if sender and recipient are the same
+    if (fromUserId.toString() === toUserId.toString()) {
       return res.status(200).json({
         success: true,
-        notifications,
-      });
-    } catch (error) {
-      console.error('Error fetching notifications:', error);
-      return res.status(500).json({
-        message: 'Error fetching notifications',
-        success: false,
+        message: 'Notification skipped - same user',
       });
     }
-  };
-  
-  // Create a new notification
-  export const createNotification = async (req, res) => {
-    try {
-      const { toUserId, type, blogId } = req.body;
-      const fromUserId = req.user?._id;
-  
-      if (!fromUserId) {
-        return res.status(401).json({
-          message: 'Unauthorized - User not authenticated',
-          success: false,
-        });
-      }
-  
-      if (!toUserId || !type) {
-        return res.status(400).json({
-          message: 'Missing required fields: toUserId or type',
-          success: false,
-        });
-      }
-  
-      const notification = await Notification.create({
-        type,
-        fromUser: fromUserId,
-        toUser: toUserId,
-        blog: blogId,
-        createdAt: new Date(),
-      });
-  
-      return res.status(201).json({
-        success: true,
-        notification,
-      });
-    } catch (error) {
-      console.error('Error creating notification:', error);
-      return res.status(500).json({
-        message: 'Error creating notification',
-        success: false,
-      });
+
+    // Create notification
+    const notification = await Notification.create({
+      type,
+      fromUser: fromUserId,
+      toUser: toUserId,
+      blog: blogId,
+      createdAt: new Date(),
+    });
+
+    // Populate the created notification with user and blog details
+    await notification.populate('fromUser', 'username');
+    if (blogId) {
+      await notification.populate('blog', 'title');
     }
-  };
-  
-  // Cleanup notifications older than 1 hour
-  export const cleanupNotifications = async (req, res) => {
-    try {
-      const oneHourAgo = new Date(Date.now() - 3600000);
-  
-      await Notification.deleteMany({ createdAt: { $lt: oneHourAgo } });
-  
-      return res.status(200).json({
-        success: true,
-        message: 'Old notifications cleaned up',
-      });
-    } catch (error) {
-      console.error('Error cleaning up notifications:', error);
-      return res.status(500).json({
-        message: 'Error cleaning up notifications',
-        success: false,
-      });
-    }
-  };
+
+    // Return created notification
+    return res.status(201).json({
+      success: true,
+      notification,
+    });
+
+  } catch (error) {
+    // Log error details
+    console.error('Error creating notification:', error.message);
+    console.error(error.stack); // Logs the stack trace for better debugging
+
+    // Return error response
+    return res.status(500).json({
+      message: 'Error creating notification',
+      success: false,
+    });
+  }
+};
+
+// Cleanup notifications older than 1 hour
+export const cleanupNotifications = async (req, res) => {
+  try {
+    const oneHourAgo = new Date(Date.now() - 3600000);
+
+    const result = await Notification.deleteMany({
+      createdAt: { $lt: oneHourAgo }
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: 'Notifications cleaned up successfully',
+      deletedCount: result.deletedCount
+    });
+  } catch (error) {
+    console.error('Error cleaning up notifications:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to cleanup notifications'
+    });
+  }
+};
