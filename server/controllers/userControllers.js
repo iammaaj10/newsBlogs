@@ -207,37 +207,131 @@ export const getOtherUsers = async (req,res) => {
     }
 }
 
-export const follower  = async (req,res) => {
-    try {
-        const loggedInUserId = req.body.id;
-        const userId = req.params.id
-
-        const loggedInUser = await User.findById(loggedInUserId)
-        const user = await User.findById(userId)
-        if(!user.followers.includes(loggedInUserId))
-        {
-            await user.updateOne({$push:{followers:loggedInUserId}})
-            await loggedInUser.updateOne({$push:{following:userId}})
-
-
-        }
-        else{
-            return res.status(400).json({
-                message: `You are already following to ${user.name}`,
-                
-            })
-        }
-        return res.status(200).json({
-
-            message:`${loggedInUser.name} just follow to ${user.name}`
-        }
-
-        )
-    } catch (error) {
-        
+// Add this function to create notifications
+const createNotificationHelper = async (type, fromUserId, toUserId, blogId = null) => {
+  try {
+    // Don't create notification if user is acting on their own content
+    if (fromUserId.toString() === toUserId.toString()) {
+      return;
     }
-} 
 
+    const notification = await Notification.create({
+      type,
+      fromUser: fromUserId,
+      toUser: toUserId,
+      blog: blogId,
+      createdAt: new Date()
+    });
+
+    return notification;
+  } catch (error) {
+    console.error('Error creating notification:', error);
+  }
+};
+
+// Modify the follower function to add notification
+export const follower = async (req, res) => {
+  try {
+    const loggedInUserId = req.body.id;
+    const userId = req.params.id;
+
+    const loggedInUser = await User.findById(loggedInUserId);
+    const user = await User.findById(userId);
+
+    if (!user.followers.includes(loggedInUserId)) {
+      await user.updateOne({ $push: { followers: loggedInUserId } });
+      await loggedInUser.updateOne({ $push: { following: userId } });
+
+      // Create notification for follow
+      await createNotificationHelper('follow', loggedInUserId, userId);
+
+      return res.status(200).json({
+        message: `${loggedInUser.name} just followed ${user.name}`,
+        success: true
+      });
+    } else {
+      return res.status(400).json({
+        message: `You are already following ${user.name}`,
+        success: false
+      });
+    }
+  } catch (error) {
+    console.error('Error in follower function:', error);
+    return res.status(500).json({
+      message: 'Internal server error',
+      success: false
+    });
+  }
+};
+
+// Add these functions for like and comment notifications
+export const handleLike = async (req, res) => {
+  try {
+    const { userId, blogId, toUserId } = req.body;
+    
+    // Don't create notification if user is liking their own blog
+    if (userId === toUserId) {
+      return res.status(200).json({
+        message: 'Self-like, no notification needed',
+        success: true
+      });
+    }
+
+    // Create notification
+    await Notification.create({
+      type: 'like',
+      fromUser: userId,
+      toUser: toUserId,
+      blog: blogId,
+      createdAt: new Date()
+    });
+
+    return res.status(200).json({
+      message: 'Notification created for like',
+      success: true
+    });
+  } catch (error) {
+    console.error('Error in handleLike:', error);
+    return res.status(500).json({
+      message: 'Internal server error',
+      success: false
+    });
+  }
+};
+
+export const handleComment = async (req, res) => {
+  try {
+    const { userId, blogId, toUserId, comment } = req.body;
+    
+    // Don't create notification if user is commenting on their own blog
+    if (userId === toUserId) {
+      return res.status(200).json({
+        message: 'Self-comment, no notification needed',
+        success: true
+      });
+    }
+
+    // Create notification
+    await Notification.create({
+      type: 'comment',
+      fromUser: userId,
+      toUser: toUserId,
+      blog: blogId,
+      createdAt: new Date()
+    });
+
+    return res.status(200).json({
+      message: 'Notification created for comment',
+      success: true
+    });
+  } catch (error) {
+    console.error('Error in handleComment:', error);
+    return res.status(500).json({
+      message: 'Internal server error',
+      success: false
+    });
+  }
+};
 
 export const unfollow = async (req,res) => {
     
@@ -365,7 +459,6 @@ export const getNotifications = async (req, res) => {
     
     console.log('Fetching notifications for userId:', userId);
 
-    // Validate user ID
     if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
       return res.status(400).json({
         message: 'Invalid or missing User ID',
@@ -373,7 +466,6 @@ export const getNotifications = async (req, res) => {
       });
     }
 
-    // Check if user exists
     const userExists = await User.findById(userId);
     if (!userExists) {
       return res.status(404).json({
@@ -382,28 +474,20 @@ export const getNotifications = async (req, res) => {
       });
     }
 
-    // Fetch notifications for the user
     const notifications = await Notification.find({ 
       toUser: userId,
-      // Only fetch notifications less than 1 hour old
-      createdAt: { $gt: new Date(Date.now() - 3600000) }
+      createdAt: { $gt: new Date(Date.now() - 3600000) } // Last hour only
     })
-    .populate('fromUser', 'username')
-    .populate('blog', 'title')
+    .populate('fromUser', 'username name profilePic')
+    .populate('blog', 'title _id')
     .sort({ createdAt: -1 })
     .lean();
 
-    // Return the notifications directly as an array to match frontend expectations
     return res.status(200).json(notifications);
     
   } catch (error) {
-    console.error('Error fetching notifications:', {
-      message: error.message,
-      stack: error.stack,
-      userId: req.params.id
-    });
-
-    return res.status(500).json([]);  // Return empty array on error to match frontend expectations
+    console.error('Error fetching notifications:', error);
+    return res.status(500).json([]);
   }
 };
 

@@ -28,52 +28,49 @@ const Notification = () => {
       setNotifications(response.data);
     } catch (error) {
       console.error('Error fetching notifications:', error);
-      toast.error('Failed to fetch notifications', {
-        position: "top-right",
-        autoClose: 3000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-      });
+      toast.error('Failed to fetch notifications');
     } finally {
       setLoading(false);
     }
   };
 
-  const cleanupNotifications = async () => {
-    try {
-      await axios.delete(`${USER_API_END_POINT}/cleanup-notifications`);
-      toast.success('Notifications cleaned up', {
-        position: "top-right",
-        autoClose: 3000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-      });
-      fetchNotifications(); // Refresh the list
-    } catch (error) {
-      console.error('Error cleaning up notifications:', error);
-      toast.error('Failed to cleanup notifications', {
-        position: "top-right",
-        autoClose: 3000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-      });
+  const getNotificationIcon = (type) => {
+    switch (type) {
+      case 'like':
+        return '❤️';
+      case 'comment':
+        return '💬';
+      case 'follow':
+        return '👤';
+      default:
+        return '📢';
     }
   };
 
   const getNotificationMessage = (notification) => {
+    const fromUser = notification.fromUser?.username || 'Someone';
+    
     switch (notification.type) {
       case 'like':
-        return `${notification.fromUser?.username || 'Someone'} liked your blog "${notification.blog?.title || 'a blog'}"`;
+        return (
+          <span>
+            <strong>{fromUser}</strong> liked your blog{' '}
+            <strong>"{notification.blog?.title || 'Untitled'}"</strong>
+          </span>
+        );
       case 'comment':
-        return `${notification.fromUser?.username || 'Someone'} commented on your blog "${notification.blog?.title || 'a blog'}"`;
+        return (
+          <span>
+            <strong>{fromUser}</strong> commented on your blog{' '}
+            <strong>"{notification.blog?.title || 'Untitled'}"</strong>
+          </span>
+        );
       case 'follow':
-        return `${notification.fromUser?.username || 'Someone'} started following you`;
+        return (
+          <span>
+            <strong>{fromUser}</strong> started following you
+          </span>
+        );
       default:
         return 'New notification';
     }
@@ -83,10 +80,14 @@ const Notification = () => {
     const now = new Date();
     const notificationDate = new Date(createdAt);
     const diffInMinutes = Math.floor((now - notificationDate) / (1000 * 60));
+    const diffInHours = Math.floor(diffInMinutes / 60);
 
     if (diffInMinutes < 1) return 'Just now';
+    if (diffInMinutes === 1) return '1 minute ago';
     if (diffInMinutes < 60) return `${diffInMinutes} minutes ago`;
-    return notificationDate.toLocaleString();
+    if (diffInHours === 1) return '1 hour ago';
+    if (diffInHours < 24) return `${diffInHours} hours ago`;
+    return notificationDate.toLocaleDateString();
   };
 
   const handleNotificationClick = (notification) => {
@@ -100,19 +101,25 @@ const Notification = () => {
   if (loading) {
     return (
       <div className="w-full max-w-2xl mx-auto p-4">
-        <div className="text-center">Loading notifications...</div>
+        <div className="text-center text-gray-600">Loading notifications...</div>
       </div>
     );
   }
 
   return (
     <div className="w-full max-w-2xl mx-auto p-4">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-2xl font-bold">Notifications</h2>
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-bold text-gray-800">Notifications</h2>
         {notifications.length > 0 && (
           <button
-            onClick={cleanupNotifications}
-            className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
+            onClick={() => {
+              toast.promise(cleanupNotifications(), {
+                pending: 'Cleaning up notifications...',
+                success: 'Notifications cleaned up!',
+                error: 'Failed to clean up notifications'
+              });
+            }}
+            className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors duration-200 ease-in-out"
           >
             Clear Old Notifications
           </button>
@@ -120,23 +127,28 @@ const Notification = () => {
       </div>
 
       {notifications.length === 0 ? (
-        <div className="text-center text-gray-500 p-4 bg-white rounded-lg shadow">
-          No new notifications
+        <div className="text-center p-8 bg-white rounded-lg shadow-sm">
+          <p className="text-gray-500">No new notifications</p>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3">
           {notifications.map((notification) => (
             <div
               key={notification._id}
               onClick={() => handleNotificationClick(notification)}
-              className="bg-white p-4 rounded-lg shadow-md hover:bg-gray-50 transition-colors cursor-pointer"
+              className="flex items-start gap-3 bg-white p-4 rounded-lg shadow-sm hover:bg-gray-50 transition-all duration-200 cursor-pointer border border-gray-100"
             >
-              <p className="text-gray-800 font-medium">
-                {getNotificationMessage(notification)}
-              </p>
-              <p className="text-sm text-gray-500 mt-1">
-                {getTimeAgo(notification.createdAt)}
-              </p>
+              <div className="text-xl">
+                {getNotificationIcon(notification.type)}
+              </div>
+              <div className="flex-1">
+                <p className="text-gray-800">
+                  {getNotificationMessage(notification)}
+                </p>
+                <p className="text-sm text-gray-500 mt-1">
+                  {getTimeAgo(notification.createdAt)}
+                </p>
+              </div>
             </div>
           ))}
         </div>

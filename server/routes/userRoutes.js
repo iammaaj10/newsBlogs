@@ -2,7 +2,9 @@ import express from 'express';
 import { 
   // ... other imports
   getNotifications,
-  cleanupNotifications
+  cleanupNotifications,
+  handleLike,
+  handleComment
 } from '../controllers/userControllers.js';
 
 const router = express.Router();
@@ -12,5 +14,9 @@ const router = express.Router();
 // Notification routes
 router.get('/notifications/:id', getNotifications);
 router.delete('/cleanup-notifications', cleanupNotifications);
+
+// Add these routes
+router.post('/like', handleLike);
+router.post('/comment', handleComment);
 
 export default router; 
