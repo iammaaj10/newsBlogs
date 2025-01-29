@@ -7,6 +7,8 @@ import axios from 'axios';
 import { USER_API_END_POINT } from '../utils/constant';
 import { updateProfile, getprofile, followingUpdate } from '../redux/userSlice';
 import { toggleRefresh } from '../redux/blogsSlics';
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const Profile = () => {
     const { user, profile } = useSelector((store) => store.user);
@@ -88,18 +90,84 @@ const Profile = () => {
         }
     };
 
-    const followAndUnfollowHandler = async () => {
+    const handleFollow = async () => {
         try {
-            const endpoint = user.following.includes(id)
-                ? `${USER_API_END_POINT}/unfollow/${id}`
-                : `${USER_API_END_POINT}/follower/${id}`;
+            const res = await axios.put(
+                `${USER_API_END_POINT}/follower/${profile?._id}`,
+                { id: user?._id },
+                { withCredentials: true }
+            );
 
-            await axios.post(endpoint, { id: user?._id }, { withCredentials: true });
+            if (res.data.success) {
+                // Create notification for follow
+                await axios.post(`${USER_API_END_POINT}/follow`, {
+                    userId: user?._id,
+                    toUserId: profile?._id
+                });
 
-            dispatch(followingUpdate(id)); 
-            dispatch(toggleRefresh()); 
+                dispatch(followingUpdate(profile?._id));
+                dispatch(toggleRefresh());
+                toast.success(res.data.message, {
+                    position: "top-right",
+                    autoClose: 3000,
+                    hideProgressBar: false,
+                    closeOnClick: true,
+                    pauseOnHover: true,
+                    draggable: true,
+                });
+            }
         } catch (error) {
-            console.error("Error in follow/unfollow:", error.response?.data || error.message);
+            console.error("Error following user:", error);
+            toast.error("Failed to follow user", {
+                position: "top-right",
+                autoClose: 3000,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+            });
+        }
+    };
+
+    const handleUnfollow = async () => {
+        try {
+            const res = await axios.put(
+                `${USER_API_END_POINT}/unfollow/${profile?._id}`,
+                { id: user?._id },
+                { withCredentials: true }
+            );
+
+            if (res.data.success) {
+                dispatch(followingUpdate(profile?._id));
+                dispatch(toggleRefresh());
+                toast.success(res.data.message, {
+                    position: "top-right",
+                    autoClose: 3000,
+                    hideProgressBar: false,
+                    closeOnClick: true,
+                    pauseOnHover: true,
+                    draggable: true,
+                });
+            }
+        } catch (error) {
+            console.error("Error unfollowing user:", error);
+            toast.error("Failed to unfollow user", {
+                position: "top-right",
+                autoClose: 3000,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+            });
+        }
+    };
+
+    // Update the follow button click handler
+    const handleFollowClick = () => {
+        if (user?.following?.includes(profile?._id)) {
+            handleUnfollow();
+        } else {
+            handleFollow();
         }
     };
 
@@ -118,14 +186,14 @@ const Profile = () => {
                     </button>
                 ) : (
                     <button
-                        onClick={followAndUnfollowHandler}
+                        onClick={handleFollowClick}
                         className={`px-4 py-2 rounded-lg ${
-                            user?.following?.includes(id)
+                            user?.following?.includes(profile?._id)
                                 ? "bg-red-500 text-white hover:bg-red-600"
                                 : "bg-green-500 text-white hover:bg-green-600"
                         }`}
                     >
-                        {user?.following?.includes(id) ? "Unfollow" : "Follow"}
+                        {user?.following?.includes(profile?._id) ? "Unfollow" : "Follow"}
                     </button>
                 )}
             </div>

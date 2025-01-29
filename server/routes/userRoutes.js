@@ -4,7 +4,8 @@ import {
   getNotifications,
   cleanupNotifications,
   handleLike,
-  handleComment
+  handleComment,
+  handleFollow
 } from '../controllers/userControllers.js';
 
 const router = express.Router();
@@ -18,5 +19,6 @@ router.delete('/cleanup-notifications', cleanupNotifications);
 // Add these routes
 router.post('/like', handleLike);
 router.post('/comment', handleComment);
+router.post('/follow', handleFollow);
 
 export default router; 

@@ -602,3 +602,36 @@ export const cleanupNotifications = async (req, res) => {
     });
   }
 };
+
+export const handleFollow = async (req, res) => {
+  try {
+    const { userId, toUserId } = req.body;
+    
+    // Don't create notification if user is following themselves
+    if (userId === toUserId) {
+      return res.status(200).json({
+        message: 'Self-follow, no notification needed',
+        success: true
+      });
+    }
+
+    // Create notification
+    await Notification.create({
+      type: 'follow',
+      fromUser: userId,
+      toUser: toUserId,
+      createdAt: new Date()
+    });
+
+    return res.status(200).json({
+      message: 'Notification created for follow',
+      success: true
+    });
+  } catch (error) {
+    console.error('Error in handleFollow:', error);
+    return res.status(500).json({
+      message: 'Internal server error',
+      success: false
+    });
+  }
+};
