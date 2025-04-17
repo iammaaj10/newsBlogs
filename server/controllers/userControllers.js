@@ -149,6 +149,27 @@ export const Bookmarks = async (req, res) => {
     }
 };
 
+// GET bookmarked blogs of a user
+export const getBookmarkedBlogs = async (req, res) => {
+  try {
+      const userId = req.params.id;
+      const user = await User.findById(userId).populate('Bookmarks');
+
+      if (!user) {
+          return res.status(404).json({ success: false, message: "User not found" });
+      }
+
+      res.status(200).json({
+          success: true,
+          bookmarks: user.Bookmarks, // this will return array of blog objects
+      });
+  } catch (err) {
+      console.error("Error fetching bookmarks:", err);
+      res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+
 
    export const profile = async (req, res) => {
     try {

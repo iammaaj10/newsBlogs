@@ -31,6 +31,10 @@ const userSchema = new mongoose.Schema({
         type: Array,
         default: []
     },
+    Bookmarks: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Blog"
+    }],
     profilePic: {
         type: String, // Path or URL to the uploaded profile picture
         default: ""   // Empty by default
@@ -38,7 +42,8 @@ const userSchema = new mongoose.Schema({
     about: {
         type: String, // Optional "about me" section
         default: ""   // Empty by default
-    }
+    },
+    
 }, { timestamps: true });
 
 export const User = mongoose.model("User", userSchema);

@@ -156,8 +156,6 @@ const BlogPost = ({ blogs }) => {
                 : blogs?.userDetails[0]?.username
               } · 1m
             </p>
-
-
           </div>
           <p>{blogs?.description}</p>
           {blogs?.image && (
@@ -189,11 +187,14 @@ const BlogPost = ({ blogs }) => {
             </div>
             <div className="flex items-center gap-1">
               <div
-                className={`p-2 rounded-full cursor-pointer ${isBookmark ? "bg-white" : "hover:bg-yellow-300"
-                  }`}
+                className={`p-2 rounded-full cursor-pointer`}
                 onClick={bookmarkHandler}
               >
-                {isBookmark ? <IoBookmark size={18} /> : <CiBookmark size={18} />}
+                {isBookmark ? (
+                  <IoBookmark size={18} color="black" />
+                ) : (
+                  <CiBookmark size={18} />
+                )}
               </div>
             </div>
             {user?._id === blogs?.userid && (

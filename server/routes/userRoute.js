@@ -1,5 +1,5 @@
 import express from "express";
-import { Bookmarks, follower, getOtherUsers, Logout, profile, Register, unfollow ,updateProfile  ,askAI, getNotifications, createNotification, cleanupNotifications} from "../controllers/userControllers.js";
+import { Bookmarks, follower, getOtherUsers, Logout, profile, Register, unfollow ,updateProfile  ,askAI, getNotifications, createNotification, cleanupNotifications,getBookmarkedBlogs } from "../controllers/userControllers.js";
 import { Login } from "../controllers/userControllers.js";
 import isAuthenticated from "../config/Auth.js";
 
@@ -9,6 +9,8 @@ router.post("/register", Register);
 router.post("/login", Login); 
 router.get("/logout",Logout)
 router.route("/bookmark/:id").put(isAuthenticated,Bookmarks)
+router.get('/bookmarks/:id', getBookmarkedBlogs);
+
 router.route("/profile/:id").get(isAuthenticated,profile)
 router.route("/otheruser/:id").get(isAuthenticated,getOtherUsers)
 router.route("/follower/:id").post(isAuthenticated,follower)

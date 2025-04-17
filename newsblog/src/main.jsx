@@ -17,6 +17,8 @@ import store from './redux/store.js';
 import { PersistGate } from 'redux-persist/integration/react';
 import { persistStore } from 'redux-persist';
 import Notification from './components/Notification.jsx';
+import BookmarksPage from './components/BookmarksPage';
+
 
 
 let persistor = persistStore(store);
@@ -61,6 +63,10 @@ const router = createBrowserRouter(
           path: 'notifications', 
           element: <Notification />,
         },
+        {
+          path: 'bookmarks',
+          element: <BookmarksPage />,
+        }
       ],
     },
   ],
