@@ -37,12 +37,18 @@ const BookmarksPage = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {bookmarks.map((blog) => (
             <div key={blog?._id || Math.random()} className="border rounded-lg p-4 shadow-md">
-              <img
-                src={blog?.image || "https://via.placeholder.com/300x180?text=No+Image"}
-                alt={blog?.title || "Blog image"}
-                className="w-full h-40 object-cover rounded-md mb-3"
-              />
-              <h3 className="text-xl font-semibold">{blog?.title || "Untitled Blog"}</h3>
+              {/* Render image only if it exists */}
+              {blog?.image && (
+                <img
+                  src={blog?.image}
+                  alt={blog?.title || "Blog image"}
+                  className="w-full h-40 object-cover rounded-md mb-3"
+                />
+              )}
+              {/* Render title only if it exists */}
+              {blog?.title && (
+                <h3 className="text-xl font-semibold">{blog?.title}</h3>
+              )}
               <p className="text-gray-600 mt-2">
                 {blog?.content?.slice(0, 100) || blog?.description?.slice(0, 100) || "No content available."}...
               </p>
