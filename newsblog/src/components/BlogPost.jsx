@@ -18,7 +18,7 @@ const BlogPost = ({ blogs }) => {
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState("");
   const [comments, setComments] = useState(blogs?.comments || []);
-  const { user, profile } = useSelector((store) => store.user); // Include profile from Redux
+  const { user } = useSelector((store) => store.user); // Include profile from Redux
   const dispatch = useDispatch();
 
   // Determine if the current user has liked the post
@@ -28,7 +28,7 @@ const BlogPost = ({ blogs }) => {
 
   // Determine if the current user has bookmarked the post
   useEffect(() => {
-    setBookmark(user?.Bookmarks?.includes(blogs?._id));
+    setBookmark(user?.Bookmarks?.includes(blogs?._id)); // Toggle bookmark state based on user's bookmarks
   }, [user?.Bookmarks, blogs?._id]);
 
   // Like/Dislike Handler
@@ -63,8 +63,8 @@ const BlogPost = ({ blogs }) => {
       );
 
       if (res.data.success) {
-        setBookmark((prev) => !prev);
-        dispatch(updateUserBookmarks(res.data.updatedBookmarks));
+        setBookmark((prev) => !prev); // Toggle bookmark state
+        dispatch(updateUserBookmarks(res.data.updatedBookmarks)); // Update user bookmarks in Redux
         toast.success(res.data.message);
       } else {
         toast.error("Failed to update bookmark.");
@@ -141,8 +141,8 @@ const BlogPost = ({ blogs }) => {
         <Avatar
           src={
             blogs?.userDetails[0]?._id === user?._id
-              ? user?.profilePic || 'https://via.placeholder.com/150' // Logged-in user's profile picture
-              : blogs?.userDetails[0]?.profilePic || 'https://via.placeholder.com/150' // Other users' profile pictures
+              ? user?.profilePic || 'https://via.placeholder.com/150'
+              : blogs?.userDetails[0]?.profilePic || 'https://via.placeholder.com/150'
           }
           size="40"
           round={true}
@@ -152,7 +152,7 @@ const BlogPost = ({ blogs }) => {
             <h1 className="font-bold text-lg">{blogs?.userDetails[0]?.name}</h1>
             <p className="text-sm">
               @{blogs?.userDetails[0]?._id === user?._id
-                ? user?.username 
+                ? user?.username
                 : blogs?.userDetails[0]?.username
               } · 1m
             </p>
@@ -177,8 +177,7 @@ const BlogPost = ({ blogs }) => {
             </div>
             <div className="flex items-center gap-1">
               <div
-                className={`p-2 rounded-full cursor-pointer ${isLiked ? "bg-white" : "hover:bg-red-300"
-                  }`}
+                className={`p-2 rounded-full cursor-pointer ${isLiked ? "bg-white" : "hover:bg-red-300"}`}
                 onClick={likeDislikeHandler}
               >
                 {isLiked ? <AiFillLike size={18} /> : <AiOutlineLike size={18} />}
@@ -187,7 +186,7 @@ const BlogPost = ({ blogs }) => {
             </div>
             <div className="flex items-center gap-1">
               <div
-                className={`p-2 rounded-full cursor-pointer`}
+                className={`p-2 rounded-full cursor-pointer ${isBookmark ? "text-black" : "hover:text-gray-500"}`}
                 onClick={bookmarkHandler}
               >
                 {isBookmark ? (
@@ -217,7 +216,7 @@ const BlogPost = ({ blogs }) => {
                 onChange={(e) => setCommentText(e.target.value)}
               ></textarea>
               <button
-                className="mt-2 bg-blue-500 text-white px-4 py-2 rounded "
+                className="mt-2 bg-blue-500 text-white px-4 py-2 rounded"
                 onClick={postCommentHandler}
               >
                 Post Comment
