@@ -425,51 +425,9 @@ export const updateProfile = async (req, res) => {
 };
 
 
-// ask ai 
 
 
-export const askAI = async (req, res) => {
-  try {
-    const { prompt } = req.body;
 
-    if (!prompt) {
-      return res.status(400).json({
-        message: "Prompt is required",
-        success: false,
-      });
-    }
-
-   
-    const url = "https://api.gemini.ai/v1/ask";  
-
-    
-    const response = await axios.post(
-      url, 
-      { 
-        prompt: prompt 
-      },
-      {
-        headers: {
-          'Authorization': `Bearer ${process.env.GEMINI_API_KEY}`,  
-          'Content-Type': 'application/json'
-        }
-      }
-    );
-
-    return res.status(200).json({
-      message: "AI response fetched successfully",
-      response: response.data,
-      success: true,
-    });
-
-  } catch (error) {
-    console.error("Error in Ask AI controller:", error);
-    return res.status(500).json({
-      message: "Internal Server Error",
-      success: false,
-    });
-  }
-};
 
 
 
