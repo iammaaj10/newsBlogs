@@ -5,30 +5,39 @@ import { USER_API_END_POINT } from '../utils/constant';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { useNotification } from '../context/NotificationContext'; // import real-time context
 
 const Notification = () => {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const { user } = useSelector((store) => store.user);
   const navigate = useNavigate();
+  const { notifications: socketNotifications } = useNotification(); // access socket notifications
 
+  // Combine socket and API notifications
   useEffect(() => {
     if (user && user._id) {
       fetchNotifications();
-      // Fetch notifications every 30 seconds
-      const interval = setInterval(fetchNotifications, 30000);
-      return () => clearInterval(interval);
     }
   }, [user]);
+
+  useEffect(() => {
+    // Merge socket notifications with the fetched ones
+    const allNotifications = [...socketNotifications, ...notifications];
+    const uniqueNotifications = Array.from(new Map(allNotifications.map(n => [n._id, n])).values());
+    setNotifications(uniqueNotifications);
+  }, [socketNotifications]);
 
   const fetchNotifications = async () => {
     try {
       setLoading(true);
       const response = await axios.get(`${USER_API_END_POINT}/notifications/${user._id}`);
-      setNotifications(response.data);
+      const notificationsData = Array.isArray(response.data) ? response.data : [];
+      setNotifications(notificationsData);
     } catch (error) {
       console.error('Error fetching notifications:', error);
       toast.error('Failed to fetch notifications');
+      setNotifications([]); // Set to an empty array on error
     } finally {
       setLoading(false);
     }
@@ -158,4 +167,3 @@ const Notification = () => {
 };
 
 export default Notification;
-
