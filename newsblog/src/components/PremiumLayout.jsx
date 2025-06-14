@@ -46,11 +46,9 @@ const PremiumLayout = () => {
   };
   
   return (
-    <div className={`min-h-screen transition-colors duration-300 ${
-      isDarkMode 
-        ? 'bg-gray-900 text-white' 
-        : 'bg-white text-gray-900'
-    }`}>
+    <div className={`min-h-screen flex flex-col transition-colors duration-300 ${
+    isDarkMode ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'
+  }`}>
       {/* Theme Toggle Button */}
       <div className="fixed  right-4 z-50">
         <button
@@ -77,7 +75,7 @@ const PremiumLayout = () => {
       </div>
 
       {/* Main Content */}
-      <div className='flex justify-between w-[90%] mx-auto mt-5'>
+      <div className='flex justify-between w-[90%] [h-100vh] mx-auto mt-5'>
         <PremiumNav isDarkMode={isDarkMode} />
         <Outlet />
         <RigthBar otherUsers={otherUsers} isDarkMode={isDarkMode} />
