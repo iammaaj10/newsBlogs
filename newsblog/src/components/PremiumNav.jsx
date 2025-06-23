@@ -65,10 +65,6 @@ const PremiumNav = ({ isDarkMode }) => {
           <p className="text-lg font-semibold">Home</p>
         </NavLink>
         
-        <div className={regularNavItemClass}>
-          <FaHashtag />
-          <p className="text-lg font-semibold">Explore</p>
-        </div>
         
         <NavLink
           to="/premium/notifications"
