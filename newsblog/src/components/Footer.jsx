@@ -69,7 +69,7 @@ const Footer = () => {
               placeholder="Enter the Email "
               className="p-2 border border-violet-700 rounded-l-2xl focus:outline-none focus:ring-2 focus:ring-violet-500"
             />
-            <button className="bg-violet-700 text-white font-semibold font-poppins p-2 rounded-r-2xl hover:bg-gray-500 hover:text-black">
+            <button className="bg-violet-700 text-white font-semibold font-poppins p-2 rounded-r-2xl hover:bg-gray-600 hover:text-black">
               Send
             </button>
           </div>
