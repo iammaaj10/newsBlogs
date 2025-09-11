@@ -7,6 +7,7 @@ import axios from 'axios';
 import { USER_API_END_POINT } from '../utils/constant';
 import { updateProfile, getprofile, followingUpdate } from '../redux/userSlice';
 import { toggleRefresh } from '../redux/blogsSlics';
+import profile1 from "../assets/profile.png";
 
 const Profile = () => {
     const { user, profile } = useSelector((store) => store.user);
@@ -131,7 +132,7 @@ const Profile = () => {
             </div>
 
             <Avatar
-                src={profilePicUrl || 'https://via.placeholder.com/150'}
+                src={profilePicUrl || profile1}
                 size="150"
                 round={true}
                 className="border-3 border-slate-400 shadow-lg"

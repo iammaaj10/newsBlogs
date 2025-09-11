@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+// BlogPost.jsx - Optimized version
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Avatar from 'react-avatar';
 import { FaRegCommentAlt } from "react-icons/fa";
 import { AiOutlineLike, AiFillLike } from "react-icons/ai";
@@ -11,223 +12,437 @@ import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
 import { toggleRefresh } from '../redux/blogsSlics';
 import { updateUserBookmarks, updateUsersLikes } from '../redux/userSlice';
+import { useSocket } from '../context/SocketProvider';
+import profile from "../assets/profile.png";
 
-const BlogPost = ({ blogs }) => {
+const BlogPost = React.memo(({ blogs, isDarkMode }) => {
+  // State management
   const [isBookmark, setBookmark] = useState(false);
   const [isLiked, setLiked] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState("");
-  const [comments, setComments] = useState(blogs?.comments || []);
-  const { user } = useSelector((store) => store.user); // Include profile from Redux
+  const [comments, setComments] = useState([]);
+  const [likesCount, setLikesCount] = useState(0);
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  const { user } = useSelector(store => store.user);
   const dispatch = useDispatch();
+  const { socket, isConnected, emit } = useSocket();
 
-  // Determine if the current user has liked the post
+  // Memoized values
+  const blogId = useMemo(() => blogs?._id, [blogs?._id]);
+  const userId = useMemo(() => user?._id, [user?._id]);
+  const blogOwnerId = useMemo(() => blogs?.userid, [blogs?.userid]);
+  const isOwnPost = useMemo(() => userId === blogOwnerId, [userId, blogOwnerId]);
+
+  // Initialize state from props
   useEffect(() => {
-    setLiked(blogs?.likes?.includes(user?._id));
-  }, [blogs?.likes, user?._id]);
+    if (blogs) {
+      setLiked(blogs.likes?.includes(userId) || false);
+      setLikesCount(blogs.likes?.length || 0);
+      setComments(blogs.comments || []);
+    }
+  }, [blogs, userId]);
 
-  // Determine if the current user has bookmarked the post
   useEffect(() => {
-    setBookmark(user?.Bookmarks?.includes(blogs?._id)); // Toggle bookmark state based on user's bookmarks
-  }, [user?.Bookmarks, blogs?._id]);
+    setBookmark(user?.Bookmarks?.includes(blogId) || false);
+  }, [user?.Bookmarks, blogId]);
 
-  // Like/Dislike Handler
-  const likeDislikeHandler = async () => {
+  // Socket event handlers with useCallback
+  const handleLikeUpdate = useCallback((data) => {
+    if (data.blogId === blogId && data.userId !== userId) {
+      console.log('📊 Updating likes from socket:', data);
+      setLikesCount(data.likesCount);
+      if (data.likedUsers && Array.isArray(data.likedUsers)) {
+        setLiked(data.likedUsers.includes(userId));
+      }
+    }
+  }, [blogId, userId]);
+
+  const handleCommentUpdate = useCallback((data) => {
+    if (data.blogId === blogId) {
+      console.log('💬 Adding comment from socket:', data);
+      setComments(prevComments => {
+        const exists = prevComments.some(c => c._id === data.comment._id);
+        return exists ? prevComments : [...prevComments, data.comment];
+      });
+    }
+  }, [blogId]);
+
+  // Set up socket listeners (only once)
+  useEffect(() => {
+    if (!socket || !isConnected) return;
+
+    console.log('🎧 Setting up socket listeners for blog:', blogId);
+    
+    const unsubscribeLike = socket.on ? socket.on('likeUpdate', handleLikeUpdate) : () => {};
+    const unsubscribeComment = socket.on ? socket.on('commentUpdate', handleCommentUpdate) : () => {};
+
+    return () => {
+      console.log('🧹 Cleaning up socket listeners for blog:', blogId);
+      if (typeof unsubscribeLike === 'function') unsubscribeLike();
+      if (typeof unsubscribeComment === 'function') unsubscribeComment();
+    };
+  }, [socket, isConnected, handleLikeUpdate, handleCommentUpdate, blogId]);
+
+  // Optimized like handler
+  const likeDislikeHandler = useCallback(async () => {
+    if (isUpdating) return;
+    
     try {
+      setIsUpdating(true);
+      const wasLiked = isLiked;
+      const newLikedState = !wasLiked;
+      const newLikesCount = wasLiked ? likesCount - 1 : likesCount + 1;
+      
+      // Optimistic update
+      setLiked(newLikedState);
+      setLikesCount(newLikesCount);
+
       const res = await axios.put(
-        `${BLOG_API_END_POINT}/likes/${blogs?._id}`,
-        { id: user?._id },
+        `${BLOG_API_END_POINT}/likes/${blogId}`,
+        { id: userId },
         { withCredentials: true }
       );
 
       if (res.data.success) {
         dispatch(updateUsersLikes(res.data.updatedlikes));
-        setLiked((prev) => !prev);
+        
+        // Emit socket event
+        if (emit) {
+          const success = emit('likeUpdate', {
+            blogId,
+            userId,
+            liked: newLikedState,
+            likesCount: newLikesCount,
+            likedUsers: res.data.updatedlikes,
+            blogOwnerId
+          });
+          
+          if (success) {
+            console.log('📡 Like update emitted successfully');
+          }
+        }
+
+        // Send notification for others' posts
+        if (newLikedState && !isOwnPost) {
+          try {
+            await axios.post(`${USER_API_END_POINT}/handleLike`, {
+              userId,
+              blogId,
+              toUserId: blogOwnerId
+            }, { withCredentials: true });
+          } catch (notifyErr) {
+            console.warn("🔔 Notification failed:", notifyErr.message);
+          }
+        }
+
         toast.success(res.data.message);
       } else {
+        // Revert on failure
+        setLiked(wasLiked);
+        setLikesCount(likesCount);
         toast.error(res.data.message);
       }
     } catch (error) {
-      console.error("Error in like/dislike handler:", error);
-      toast.error("An error occurred while liking/disliking.");
+      // Revert on error
+      setLiked(!isLiked);
+      setLikesCount(likesCount);
+      console.error("❌ Like error:", error);
+      toast.error("Failed to update like status");
+    } finally {
+      setIsUpdating(false);
     }
-  };
+  }, [isLiked, likesCount, blogId, userId, blogOwnerId, isOwnPost, emit, dispatch, isUpdating]);
 
-  // Bookmark Handler
-  const bookmarkHandler = async () => {
+  // Optimized bookmark handler
+  const bookmarkHandler = useCallback(async () => {
+    if (isUpdating) return;
+    
     try {
+      setIsUpdating(true);
+      const wasBookmarked = isBookmark;
+      setBookmark(!wasBookmarked);
+
       const res = await axios.put(
-        `${USER_API_END_POINT}/bookmark/${blogs?._id}`,
-        { id: user?._id },
+        `${USER_API_END_POINT}/bookmark/${blogId}`,
+        { id: userId },
         { withCredentials: true }
       );
 
       if (res.data.success) {
-        setBookmark((prev) => !prev); // Toggle bookmark state
-        dispatch(updateUserBookmarks(res.data.updatedBookmarks)); // Update user bookmarks in Redux
+        dispatch(updateUserBookmarks(res.data.updatedBookmarks));
         toast.success(res.data.message);
       } else {
-        toast.error("Failed to update bookmark.");
+        setBookmark(wasBookmarked);
+        toast.error("Failed to update bookmark");
       }
     } catch (error) {
-      console.error("Error toggling bookmark:", error);
-      toast.error("An error occurred.");
+      setBookmark(!isBookmark);
+      console.error("❌ Bookmark error:", error);
+      toast.error("An error occurred");
+    } finally {
+      setIsUpdating(false);
     }
-  };
+  }, [isBookmark, blogId, userId, dispatch, isUpdating]);
 
-  // Delete Post Handler
-  const deletePostHandler = async () => {
-    try {
-      const res = await axios.delete(`${BLOG_API_END_POINT}/delete/${blogs?._id}`, {
-        withCredentials: true,
-      });
-      dispatch(toggleRefresh());
-      toast.success(res.data.message);
-    } catch (error) {
-      console.error("Error deleting post:", error);
-      toast.error("An error occurred while deleting the post.");
-    }
-  };
-
-  // Post Comment Handler
-  const postCommentHandler = async () => {
-    if (!commentText.trim()) {
-      toast.error("Comment cannot be empty!");
-      return;
-    }
+  // Optimized comment handler
+  const postCommentHandler = useCallback(async () => {
+    if (!commentText.trim() || isUpdating) return;
 
     try {
+      setIsUpdating(true);
+      
       const res = await axios.put(
-        `${BLOG_API_END_POINT}/addComment/${blogs?._id}`,
-        { text: commentText, id: user?._id },
+        `${BLOG_API_END_POINT}/addComment/${blogId}`,
+        { text: commentText, id: userId },
         { withCredentials: true }
       );
 
       if (res.data.success) {
-        setComments(res.data.blog.comments); // Update comments
+        const newComment = res.data.blog.comments.slice(-1)[0];
+        
+        setComments(res.data.blog.comments);
         setCommentText("");
+        
+        // Emit socket event
+        if (emit) {
+          const success = emit('commentUpdate', {
+            blogId,
+            comment: newComment,
+            blogOwnerId
+          });
+          
+          if (success) {
+            console.log('📡 Comment update emitted successfully');
+          }
+        }
+
+        // Send notification for others' posts
+        if (!isOwnPost) {
+          try {
+            await axios.post(`${USER_API_END_POINT}/handleComment`, {
+              userId,
+              blogId,
+              toUserId: blogOwnerId
+            }, { withCredentials: true });
+          } catch (notifyErr) {
+            console.warn("🔔 Notification failed:", notifyErr.message);
+          }
+        }
+
         toast.success("Comment added successfully!");
       } else {
-        toast.error(res.data.message || "Failed to add comment.");
+        toast.error(res.data.message || "Failed to add comment");
       }
     } catch (error) {
-      console.error("Error posting comment:", error);
-      toast.error("An error occurred while adding the comment.");
+      console.error("❌ Comment error:", error);
+      toast.error("Failed to add comment");
+    } finally {
+      setIsUpdating(false);
     }
-  };
+  }, [commentText, blogId, userId, blogOwnerId, isOwnPost, emit, isUpdating]);
 
-  // Fetch Blog Comments on Component Mount
-  useEffect(() => {
-    const fetchBlog = async () => {
-      try {
-        const res = await axios.get(`${BLOG_API_END_POINT}/getBlogById/${blogs?._id}`);
-        if (res.data.success) {
-          setComments(res.data.blog.comments);
-        } else {
-          toast.error("Failed to fetch blog.");
-        }
-      } catch (error) {
-        console.error("Error fetching blog:", error);
-        toast.error("An error occurred while fetching the blog.");
+  // Delete handler
+  const deletePostHandler = useCallback(async () => {
+    if (!isOwnPost || isUpdating) return;
+    
+    try {
+      setIsUpdating(true);
+      const res = await axios.delete(`${BLOG_API_END_POINT}/delete/${blogId}`, {
+        withCredentials: true,
+      });
+      
+      if (res.data.success) {
+        dispatch(toggleRefresh());
+        toast.success(res.data.message);
       }
-    };
+    } catch (error) {
+      console.error("❌ Delete error:", error);
+      toast.error("Failed to delete post");
+    } finally {
+      setIsUpdating(false);
+    }
+  }, [blogId, isOwnPost, dispatch, isUpdating]);
 
-    fetchBlog();
-  }, [blogs?._id]);
+  // Loading state
+  if (!blogs) {
+    return (
+      <div className={`p-6 mt-2 mb-4 rounded-xl shadow-lg animate-pulse ${
+        isDarkMode ? 'bg-gray-800/80' : 'bg-white/90'
+      }`}>
+        <div className="flex gap-4">
+          <div className="w-12 h-12 bg-gray-300 rounded-full"></div>
+          <div className="flex-1">
+            <div className="h-4 bg-gray-300 rounded mb-2"></div>
+            <div className="h-20 bg-gray-300 rounded"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="p-2 border-b border-gray-300">
-      <div className="flex gap-2">
-        <Avatar
-          src={
-            blogs?.userDetails[0]?._id === user?._id
-              ? user?.profilePic || 'https://via.placeholder.com/150'
-              : blogs?.userDetails[0]?.profilePic || 'https://via.placeholder.com/150'
-          }
-          size="40"
-          round={true}
-        />
-        <div className="w-full">
-          <div className="flex items-center gap-2">
-            <h1 className="font-bold text-lg">{blogs?.userDetails[0]?.name}</h1>
-            <p className="text-sm">
-              @{blogs?.userDetails[0]?._id === user?._id
+    <div className={`p-6 mt-2 mb-4 rounded-xl shadow-lg backdrop-blur-sm transition-all duration-300 hover:shadow-xl ${
+      isDarkMode 
+        ? 'bg-gray-800/80 border border-gray-700/50 hover:bg-gray-800/90' 
+        : 'bg-white/90 border border-gray-200/50 hover:bg-white'
+    }`}>
+      <div className="flex gap-4">
+        <div className="flex-shrink-0">
+          <Avatar
+            src={
+              blogs?.userDetails?.[0]?._id === userId
+                ? user?.profilePic || profile
+                : blogs?.userDetails?.[0]?.profilePic || profile
+            }
+            size="48"
+            round={true}
+            className="ring-2 ring-orange-500/20"
+          />
+        </div>
+        
+        <div className="flex-1 min-w-0">
+          {/* Header */}
+          <div className="flex items-center gap-2 mb-3">
+            <h1 className={`font-bold text-lg truncate ${
+              isDarkMode ? 'text-white' : 'text-gray-900'
+            }`}>
+              {blogs?.userDetails?.[0]?.name}
+            </h1>
+            <p className={`text-sm flex-shrink-0 ${
+              isDarkMode ? 'text-gray-400' : 'text-gray-500'
+            }`}>
+              @{blogs?.userDetails?.[0]?._id === userId
                 ? user?.username
-                : blogs?.userDetails[0]?.username
-              } · 1m
+                : blogs?.userDetails?.[0]?.username
+              }
             </p>
           </div>
-          <p>{blogs?.description}</p>
+
+          {/* Content */}
+          <p className={`mb-4 leading-relaxed ${
+            isDarkMode ? 'text-gray-200' : 'text-gray-800'
+          }`}>
+            {blogs?.description}
+          </p>
+
+          {/* Image */}
           {blogs?.image && (
-            <img
-              src={blogs?.image}
-              alt="Blog"
-              className="w-[200px] h-[200px] object-cover rounded-lg"
-            />
+            <div className="mb-4">
+              <img
+                src={blogs.image}
+                alt="Blog"
+                className="w-full max-w-md h-64 object-cover rounded-xl shadow-md border transition-transform duration-200 hover:scale-[1.02]"
+                loading="lazy"
+              />
+            </div>
           )}
-          <div className="flex justify-between mt-2">
-            <div className="flex items-center gap-1">
-              <div
-                className="p-2 hover:bg-green-300 rounded-full cursor-pointer"
-                onClick={() => setShowComments((prev) => !prev)}
+
+          {/* Action Buttons */}
+          <div className="flex items-center justify-between py-3">
+            <button
+              className={`flex items-center gap-2 px-3 py-2 rounded-full transition-all duration-200 ${
+                isDarkMode 
+                  ? 'hover:bg-gray-700/80 text-gray-300 hover:text-blue-400' 
+                  : 'hover:bg-blue-50 text-gray-600 hover:text-blue-600'
+              }`}
+              onClick={() => setShowComments(prev => !prev)}
+              disabled={isUpdating}
+            >
+              <FaRegCommentAlt size={16} />
+              <span className="text-sm font-medium">{comments.length}</span>
+            </button>
+
+            <button
+              className={`flex items-center gap-2 px-3 py-2 rounded-full transition-all duration-200 ${
+                isLiked 
+                  ? (isDarkMode ? 'bg-red-500/20 text-red-400' : 'bg-red-50 text-red-500')
+                  : (isDarkMode ? 'hover:bg-gray-700/80 text-gray-300 hover:text-red-400' : 'hover:bg-red-50 text-gray-600 hover:text-red-600')
+              } ${isUpdating ? 'opacity-50 cursor-not-allowed' : ''}`}
+              onClick={likeDislikeHandler}
+              disabled={isUpdating}
+            >
+              {isLiked ? <AiFillLike size={18} /> : <AiOutlineLike size={18} />}
+              <span className="text-sm font-medium">{likesCount}</span>
+            </button>
+
+            <button
+              className={`p-2 rounded-full transition-all duration-200 ${
+                isBookmark
+                  ? (isDarkMode ? 'text-blue-400 bg-blue-500/20' : 'text-blue-600 bg-blue-50')
+                  : (isDarkMode ? 'hover:bg-gray-700/80 text-gray-300 hover:text-blue-400' : 'hover:bg-blue-50 text-gray-600 hover:text-blue-600')
+              } ${isUpdating ? 'opacity-50 cursor-not-allowed' : ''}`}
+              onClick={bookmarkHandler}
+              disabled={isUpdating}
+            >
+              {isBookmark ? <IoBookmark size={18} /> : <CiBookmark size={18} />}
+            </button>
+
+            {isOwnPost && (
+              <button
+                className={`p-2 rounded-full transition-all duration-200 ${
+                  isDarkMode 
+                    ? 'hover:bg-red-500/20 text-gray-300 hover:text-red-400' 
+                    : 'hover:bg-red-50 text-gray-600 hover:text-red-500'
+                } ${isUpdating ? 'opacity-50 cursor-not-allowed' : ''}`}
+                onClick={deletePostHandler}
+                disabled={isUpdating}
               >
-                <FaRegCommentAlt size={15} />
-              </div>
-              <p>{comments.length}</p>
-            </div>
-            <div className="flex items-center gap-1">
-              <div
-                className={`p-2 rounded-full cursor-pointer ${isLiked ? "bg-white" : "hover:bg-red-300"}`}
-                onClick={likeDislikeHandler}
-              >
-                {isLiked ? <AiFillLike size={18} /> : <AiOutlineLike size={18} />}
-              </div>
-              <p>{blogs?.likes?.length}</p>
-            </div>
-            <div className="flex items-center gap-1">
-              <div
-                className={`p-2 rounded-full cursor-pointer ${isBookmark ? "text-black" : "hover:text-gray-500"}`}
-                onClick={bookmarkHandler}
-              >
-                {isBookmark ? (
-                  <IoBookmark size={18} color="black" />
-                ) : (
-                  <CiBookmark size={18} />
-                )}
-              </div>
-            </div>
-            {user?._id === blogs?.userid && (
-              <div className="flex items-center gap-1">
-                <div
-                  className="p-2 hover:bg-red-500 rounded-full cursor-pointer"
-                  onClick={deletePostHandler}
-                >
-                  <MdDelete size={18} />
-                </div>
-              </div>
+                <MdDelete size={18} />
+              </button>
             )}
           </div>
+
+          {/* Comments Section */}
           {showComments && (
-            <div className="mt-2">
-              <textarea
-                className="w-full p-2 border rounded"
-                placeholder="Add a comment..."
-                value={commentText}
-                onChange={(e) => setCommentText(e.target.value)}
-              ></textarea>
-              <button
-                className="mt-2 bg-blue-500 text-white px-4 py-2 rounded"
-                onClick={postCommentHandler}
-              >
-                Post Comment
-              </button>
-              <div className="mt-2">
+            <div className={`mt-6 p-4 rounded-xl transition-all duration-300 ${
+              isDarkMode ? 'bg-gray-900/50 border border-gray-700/30' : 'bg-gray-50/80 border border-gray-200/50'
+            }`}>
+              <div className="mb-4">
+                <textarea
+                  className={`w-full p-4 border rounded-xl resize-none transition-all duration-200 focus:ring-2 focus:ring-orange-500/50 ${
+                    isDarkMode 
+                      ? 'bg-gray-800/80 border-gray-600/50 text-white placeholder-gray-400 focus:border-orange-500/50' 
+                      : 'bg-white/90 border-gray-300/50 text-gray-900 placeholder-gray-500 focus:border-orange-500/50'
+                  }`}
+                  placeholder="Add a thoughtful comment..."
+                  value={commentText}
+                  rows="3"
+                  onChange={(e) => setCommentText(e.target.value)}
+                  disabled={isUpdating}
+                />
+                <button
+                  className={`mt-3 px-6 py-2 rounded-xl font-medium transition-all duration-200 transform hover:scale-105 ${
+                    isDarkMode
+                      ? 'bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white shadow-lg'
+                      : 'bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white shadow-lg'
+                  } ${isUpdating || !commentText.trim() ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  onClick={postCommentHandler}
+                  disabled={isUpdating || !commentText.trim()}
+                >
+                  {isUpdating ? 'Posting...' : 'Post Comment'}
+                </button>
+              </div>
+
+              {/* Comments List */}
+              <div className="space-y-3">
                 {comments.map((comment, index) => (
-                  <div key={index} className="p-2 border-b">
-                    <p className="font-bold">
+                  <div key={comment._id || index} className={`p-4 rounded-xl transition-all duration-200 ${
+                    isDarkMode 
+                      ? 'bg-gray-800/60 border border-gray-700/30 hover:bg-gray-800/80' 
+                      : 'bg-white/80 border border-gray-200/50 hover:bg-white'
+                  }`}>
+                    <p className={`font-semibold mb-2 ${
+                      isDarkMode ? 'text-orange-400' : 'text-orange-600'
+                    }`}>
                       {comment?.postedby?.name || "Anonymous"}
                     </p>
-                    <p>{comment.text}</p>
+                    <p className={`leading-relaxed ${
+                      isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                    }`}>
+                      {comment.text}
+                    </p>
                   </div>
                 ))}
               </div>
@@ -237,6 +452,8 @@ const BlogPost = ({ blogs }) => {
       </div>
     </div>
   );
-};
+});
+
+BlogPost.displayName = 'BlogPost';
 
 export default BlogPost;

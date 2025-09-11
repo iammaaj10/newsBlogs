@@ -8,11 +8,12 @@ import { toast } from "react-hot-toast";
 import Modal from "react-modal";
 import { useDispatch, useSelector } from "react-redux";
 import { toggleRefresh, getisActive } from "../redux/blogsSlics";
+import profile1 from "../assets/profile.png"; 
 
 const AI_API_END_POINT = "http://localhost:8080/api/ai/ask";
 Modal.setAppElement("#root");
 
-const CreatePost = () => {
+const CreatePost = ({ isDarkMode }) => {
   const [description, setDescription] = useState("");
   const [image, setImage] = useState(null);
   const [showPromptInput, setShowPromptInput] = useState(false);
@@ -101,48 +102,93 @@ const CreatePost = () => {
   };
 
   return (
-    <div className="w-full">
+    <div className={`w-full rounded-xl shadow-lg backdrop-blur-sm transition-all duration-300 ${
+      isDarkMode ? 'bg-gray-800/80 border border-gray-700/50' : 'bg-white/90 border border-gray-200/50'
+    }`}>
       {/* Tabs */}
-      <div className="mt-3 flex items-center justify-between">
+      <div className="flex items-center">
         <div
           onClick={() => toggleTab("news")}
-          className={`text-center w-full px-4 py-3 cursor-pointer hover:bg-gray-200 hover:rounded-lg ${
-            isActive ? "border-b-4 border-orange-500" : ""
+          className={`text-center w-full px-6 py-5 cursor-pointer transition-all duration-300 rounded-tl-xl ${
+            isActive 
+              ? (isDarkMode 
+                  ? 'bg-gradient-to-r from-orange-600/20 to-red-600/20 border-b-4 border-orange-500' 
+                  : 'bg-gradient-to-r from-orange-50 to-red-50 border-b-4 border-orange-500')
+              : (isDarkMode 
+                  ? 'hover:bg-gray-700/50' 
+                  : 'hover:bg-gray-50')
           }`}
         >
-          <h1 className="font-bold text-gray-400 text-lg">News For You</h1>
+          <h1 className={`font-bold text-lg transition-all duration-300 ${
+            isActive 
+              ? (isDarkMode ? 'text-orange-400' : 'text-orange-600')
+              : (isDarkMode ? 'text-gray-400 hover:text-gray-300' : 'text-gray-500 hover:text-gray-700')
+          }`}>
+            News For You
+          </h1>
         </div>
         <div
           onClick={() => toggleTab("following")}
-          className={`text-center w-full px-4 py-3 cursor-pointer hover:bg-gray-200 hover:rounded-lg ${
-            !isActive ? "border-b-4 border-orange-500" : ""
+          className={`text-center w-full px-6 py-5 cursor-pointer transition-all duration-300 rounded-tr-xl ${
+            !isActive 
+              ? (isDarkMode 
+                  ? 'bg-gradient-to-r from-orange-600/20 to-red-600/20 border-b-4 border-orange-500' 
+                  : 'bg-gradient-to-r from-orange-50 to-red-50 border-b-4 border-orange-500')
+              : (isDarkMode 
+                  ? 'hover:bg-gray-700/50' 
+                  : 'hover:bg-gray-50')
           }`}
         >
-          <h1 className="font-bold text-gray-400 text-lg">Following</h1>
+          <h1 className={`font-bold text-lg transition-all duration-300 ${
+            !isActive 
+              ? (isDarkMode ? 'text-orange-400' : 'text-orange-600')
+              : (isDarkMode ? 'text-gray-400 hover:text-gray-300' : 'text-gray-500 hover:text-gray-700')
+          }`}>
+            Following
+          </h1>
         </div>
       </div>
 
-      {/* Post input */}
-      <div className="flex items-center p-4">
-        <Avatar
-          src={user?.profilePic || "https://www.placecage.com/c/150/150"}
-          size="40"
-          round
-        />
-        <input
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          type="text"
-          className="outline-none ml-2 w-full px-2 py-1 text-lg border-none"
-          placeholder="Express your thoughts and Blog it"
-        />
+      {/* Post Input Section */}
+      <div className={`flex items-start gap-4 p-6 border-b transition-colors duration-200 ${
+        isDarkMode ? 'border-gray-700/50' : 'border-gray-200/50'
+      }`}>
+        <div className="flex-shrink-0">
+          <Avatar
+            src={user?.profilePic || profile1}
+            size="48"
+            round
+            className="ring-2 ring-orange-500/20"
+          />
+        </div>
+        <div className="flex-1">
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            className={`w-full px-4 py-3 text-lg rounded-xl resize-none transition-all duration-200 focus:ring-2 focus:ring-orange-500/50 ${
+              isDarkMode 
+                ? 'bg-gray-900/50 text-white placeholder-gray-400 border border-gray-600/50 focus:border-orange-500/50' 
+                : 'bg-gray-50/80 text-gray-900 placeholder-gray-500 border border-gray-300/50 focus:border-orange-500/50'
+            }`}
+            placeholder="What's on your mind? Share your thoughts..."
+            rows="3"
+          />
+        </div>
       </div>
 
-      {/* Controls */}
-      <div className="p-4 flex items-center justify-between border-b border-gray-300">
+      {/* Controls Section */}
+      <div className={`p-6 flex items-center justify-between border-b transition-colors duration-200 ${
+        isDarkMode ? 'border-gray-700/50' : 'border-gray-300/50'
+      }`}>
         <div className="flex items-center gap-4">
-          <label htmlFor="file" className="cursor-pointer">
-            <CiImageOn size={30} />
+          <label 
+            htmlFor="file" 
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl cursor-pointer transition-all duration-200 transform hover:scale-105 ${
+              isDarkMode ? 'hover:bg-gray-700/60 text-gray-300 hover:text-orange-400' : 'hover:bg-orange-50 text-gray-600 hover:text-orange-600'
+            }`}
+          >
+            <CiImageOn size={24} />
+            <span className="font-medium">Photo</span>
             <input
               type="file"
               id="file"
@@ -154,16 +200,24 @@ const CreatePost = () => {
 
           <button
             onClick={() => setShowPromptInput(!showPromptInput)}
-            className="flex items-center gap-1 text-gray-700 hover:text-orange-600"
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all duration-200 transform hover:scale-105 ${
+              showPromptInput
+                ? (isDarkMode ? 'bg-gradient-to-r from-orange-600 to-red-600 text-white shadow-lg' : 'bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-lg')
+                : (isDarkMode ? 'hover:bg-gray-700/60 text-gray-300 hover:text-purple-400' : 'hover:bg-purple-50 text-gray-600 hover:text-purple-600')
+            }`}
           >
-            <FaRobot size={24} />
-            <span className="text-sm font-semibold">Ask AI</span>
+            <FaRobot size={20} />
+            <span>Ask AI</span>
           </button>
         </div>
 
         <button
           onClick={handleSubmit}
-          className="bg-orange-500 hover:bg-blue-700 text-black font-bold px-3 py-2 rounded-full w-24"
+          className={`px-8 py-3 rounded-xl font-bold transition-all duration-200 transform hover:scale-105 ${
+            isDarkMode
+              ? 'bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white shadow-lg'
+              : 'bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white shadow-lg'
+          }`}
         >
           Blog It
         </button>
@@ -171,71 +225,72 @@ const CreatePost = () => {
 
       {/* AI Prompt Input */}
       {showPromptInput && (
-        <div className="p-4 flex gap-2 items-center">
-          <input
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            type="text"
-            placeholder="Ask AI to help you write..."
-            className="flex-1 border border-gray-300 rounded px-3 py-2 outline-none"
-          />
-          <button
-            onClick={handleAIResponse}
-            disabled={loadingAI}
-            className={`px-4 py-2 rounded text-white ${
-              loadingAI ? "bg-gray-400 cursor-not-allowed" : "bg-black hover:bg-gray-800"
-            }`}
-          >
-            {loadingAI ? "Loading..." : "Generate"}
-          </button>
+        <div className={`p-6 border-b transition-all duration-300 ${
+          isDarkMode ? 'border-gray-700/50 bg-gray-900/30' : 'border-gray-200/50 bg-purple-50/30'
+        }`}>
+          <div className="flex gap-4 items-center">
+            <input
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              type="text"
+              placeholder="Ask AI to help you write something amazing..."
+              className={`flex-1 px-4 py-3 rounded-xl transition-all duration-200 focus:ring-2 focus:ring-purple-500/50 ${
+                isDarkMode 
+                  ? 'bg-gray-800/80 border border-gray-600/50 text-white placeholder-gray-400 focus:border-purple-500/50' 
+                  : 'bg-white/90 border border-gray-300/50 text-gray-900 placeholder-gray-500 focus:border-purple-500/50'
+              }`}
+            />
+            <button
+              onClick={handleAIResponse}
+              disabled={loadingAI}
+              className={`px-6 py-3 rounded-xl font-medium transition-all duration-200 transform hover:scale-105 ${
+                loadingAI 
+                  ? 'bg-gray-400 cursor-not-allowed text-white' 
+                  : (isDarkMode 
+                      ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white shadow-lg' 
+                      : 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white shadow-lg')
+              }`}
+            >
+              {loadingAI ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  <span>Generating...</span>
+                </div>
+              ) : (
+                "Generate"
+              )}
+            </button>
+                    </div>
         </div>
       )}
 
-      {/* Image Preview */}
-      {image && (
-        <div className="p-4">
-          <img
-            src={image}
-            alt="Preview"
-            className="w-32 rounded-lg max-h-60 object-cover"
-          />
-          <button
-            onClick={() => setImage(null)}
-            className="mt-2 text-white px-3 py-2 rounded-full bg-black hover:bg-red-700"
-          >
-            Remove Image
-          </button>
-        </div>
-      )}
-
-      {/* AI Modal */}
+      {/* AI Response Modal */}
       <Modal
         isOpen={showModal}
         onRequestClose={() => setShowModal(false)}
-        className="bg-white rounded-xl max-w-lg mx-auto mt-20 p-6 shadow-xl outline-none"
-        overlayClassName="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-start"
+        className={`max-w-2xl mx-auto mt-20 p-8 rounded-xl shadow-xl outline-none transition-all duration-300 ${
+          isDarkMode
+            ? "bg-gray-800 text-white border border-gray-600"
+            : "bg-white text-gray-900 border border-gray-300"
+        }`}
+        overlayClassName="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-start z-50"
       >
-        <h2 className="text-lg font-bold mb-3">AI Generated Text</h2>
-        <textarea
-          readOnly
-          value={aiResponse}
-          className="w-full h-40 border border-gray-300 rounded p-2 resize-none"
-        />
-        <button
-          onClick={() => {
-            navigator.clipboard.writeText(aiResponse);
-            toast.success("Copied to clipboard!");
-          }}
-          className="bg-green-600 text-white px-4 py-2 mt-3 rounded hover:bg-green-700"
-        >
-          Copy Text
-        </button>
-        <button
-          onClick={() => setShowModal(false)}
-          className="bg-gray-500 text-white px-4 py-2 mt-2 rounded hover:bg-gray-600 ml-2"
-        >
-          Close
-        </button>
+        <h2 className="text-xl font-bold mb-4 text-orange-500">AI Generated Content</h2>
+        <div className="max-h-96 overflow-y-auto whitespace-pre-wrap">
+          {aiResponse}
+        </div>
+        <div className="mt-6 text-right">
+          <button
+            onClick={() => setShowModal(false)}
+            className={`px-6 py-2 rounded-xl font-medium transition-all duration-200 ${
+              isDarkMode
+                ? "bg-red-600 hover:bg-red-700 text-white"
+                : "bg-red-500 hover:bg-red-600 text-white"
+            }`}
+          >
+            Close
+          </button>
+        </div>
       </Modal>
     </div>
   );
