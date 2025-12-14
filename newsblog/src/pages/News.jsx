@@ -1,15 +1,11 @@
-
-import NewsSection from '../components/NewsSection'
-
+import NewsSection from "../components/NewsSection";
 
 const News = () => {
   return (
     <div>
-        
-         <NewsSection/>
+      <NewsSection />
     </div>
-   
-  )
-}
+  );
+};
 
-export default News
+export default News;

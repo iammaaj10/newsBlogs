@@ -23,7 +23,7 @@ const EntertainmentNews = () => {
                 const result = await response.json();
 
                 if (result && result.length > 0) {
-                    setEntertainment(result.slice(0, 20)); // Limit to 20 for better performance
+                    setEntertainment(result.slice(0, 20));
                 } else {
                     setEntertainment([]);
                 }
@@ -62,6 +62,30 @@ const EntertainmentNews = () => {
     const handleMovieClick = async (movie) => {
         setSelectedMovie(movie);
         await fetchMovieRatings(movie.id);
+    };
+
+    // Flatten nested rating objects into displayable format
+    const flattenRatings = (ratingsObj) => {
+        if (!ratingsObj || typeof ratingsObj !== 'object') return {};
+        
+        const flattened = {};
+        
+        Object.entries(ratingsObj).forEach(([key, value]) => {
+            if (value === null || value === undefined) {
+                flattened[key] = 'N/A';
+            } else if (typeof value === 'object' && !Array.isArray(value)) {
+                // If it's a nested object, flatten it with dot notation
+                Object.entries(value).forEach(([subKey, subValue]) => {
+                    flattened[`${key}.${subKey}`] = String(subValue || 'N/A');
+                });
+            } else if (Array.isArray(value)) {
+                flattened[key] = value.join(', ');
+            } else {
+                flattened[key] = String(value);
+            }
+        });
+        
+        return flattened;
     };
 
     if (loading) {
@@ -214,7 +238,7 @@ const EntertainmentNews = () => {
                                                 Detailed Ratings
                                             </h3>
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                {Object.entries(movieRatings[selectedMovie.id]).map(([key, value]) => (
+                                                {Object.entries(flattenRatings(movieRatings[selectedMovie.id])).map(([key, value]) => (
                                                     <div key={key} className="bg-gray-700 rounded-lg p-4">
                                                         <div className="text-sm text-gray-400 uppercase tracking-wide">{key}</div>
                                                         <div className="text-xl font-bold text-white">{value}</div>

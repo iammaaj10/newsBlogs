@@ -1,45 +1,70 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useSelector } from 'react-redux';
 import axios from 'axios';
 import { USER_API_END_POINT } from '../utils/constant';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { useNotification } from '../context/NotificationContext'; // import real-time context
+import { useNotification } from '../context/NotificationContext';
 
 const Notification = () => {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const { user } = useSelector((store) => store.user);
   const navigate = useNavigate();
-  const { notifications: socketNotifications } = useNotification(); // access socket notifications
+  const { notifications: socketNotifications, clearNotifications } = useNotification();
 
-  // Combine socket and API notifications
-  useEffect(() => {
-    if (user && user._id) {
-      fetchNotifications();
-    }
-  }, [user]);
-
-  useEffect(() => {
-    // Merge socket notifications with the fetched ones
-    const allNotifications = [...socketNotifications, ...notifications];
-    const uniqueNotifications = Array.from(new Map(allNotifications.map(n => [n._id, n])).values());
-    setNotifications(uniqueNotifications);
-  }, [socketNotifications]);
-
-  const fetchNotifications = async () => {
+  // Fetch notifications from API
+  const fetchNotifications = useCallback(async () => {
+    if (!user?._id) return;
+    
     try {
       setLoading(true);
-      const response = await axios.get(`${USER_API_END_POINT}/notifications/${user._id}`);
-      const notificationsData = Array.isArray(response.data) ? response.data : [];
+      const response = await axios.get(`${USER_API_END_POINT}/notifications/${user._id}`, {
+        withCredentials: true
+      });
+      // Handle the new response structure
+      const notificationsData = Array.isArray(response.data.notifications) ? response.data.notifications : [];
       setNotifications(notificationsData);
     } catch (error) {
       console.error('Error fetching notifications:', error);
       toast.error('Failed to fetch notifications');
-      setNotifications([]); // Set to an empty array on error
+      setNotifications([]);
     } finally {
       setLoading(false);
+    }
+  }, [user?._id]);
+
+  // Initial fetch
+  useEffect(() => {
+    fetchNotifications();
+  }, [fetchNotifications]);
+
+  // Combine API and socket notifications
+  const allNotifications = React.useMemo(() => {
+    const combined = [...socketNotifications, ...notifications];
+    // Remove duplicates based on _id
+    const uniqueNotifications = Array.from(
+      new Map(combined.map(n => [n._id, n])).values()
+    );
+    // Sort by creation date (newest first)
+    return uniqueNotifications.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  }, [socketNotifications, notifications]);
+
+  // Cleanup old notifications
+  const cleanupNotifications = async () => {
+    try {
+      await axios.delete(`${USER_API_END_POINT}/notifications/${user._id}`, {
+        withCredentials: true
+      });
+      setNotifications([]);
+      if (clearNotifications) {
+        clearNotifications();
+      }
+      return Promise.resolve();
+    } catch (error) {
+      console.error('Error clearing notifications:', error);
+      return Promise.reject(error);
     }
   };
 
@@ -90,20 +115,27 @@ const Notification = () => {
     const notificationDate = new Date(createdAt);
     const diffInMinutes = Math.floor((now - notificationDate) / (1000 * 60));
     const diffInHours = Math.floor(diffInMinutes / 60);
+    const diffInDays = Math.floor(diffInHours / 24);
 
     if (diffInMinutes < 1) return 'Just now';
     if (diffInMinutes === 1) return '1 minute ago';
     if (diffInMinutes < 60) return `${diffInMinutes} minutes ago`;
     if (diffInHours === 1) return '1 hour ago';
     if (diffInHours < 24) return `${diffInHours} hours ago`;
+    if (diffInDays === 1) return '1 day ago';
+    if (diffInDays < 7) return `${diffInDays} days ago`;
     return notificationDate.toLocaleDateString();
   };
 
   const handleNotificationClick = (notification) => {
     if (notification.type === 'like' || notification.type === 'comment') {
-      navigate(`/blog/${notification.blog?._id}`);
+      if (notification.blog?._id) {
+        navigate(`/blog/${notification.blog._id}`);
+      }
     } else if (notification.type === 'follow') {
-      navigate(`/profile/${notification.fromUser?._id}`);
+      if (notification.fromUser?._id) {
+        navigate(`/profile/${notification.fromUser._id}`);
+      }
     }
   };
 
@@ -119,7 +151,7 @@ const Notification = () => {
     <div className="w-full max-w-2xl mx-auto p-4">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold text-gray-800">Notifications</h2>
-        {notifications.length > 0 && (
+        {allNotifications.length > 0 && (
           <button
             onClick={() => {
               toast.promise(cleanupNotifications(), {
@@ -130,18 +162,18 @@ const Notification = () => {
             }}
             className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors duration-200 ease-in-out"
           >
-            Clear Old Notifications
+            Clear All Notifications
           </button>
         )}
       </div>
 
-      {notifications.length === 0 ? (
+      {allNotifications.length === 0 ? (
         <div className="text-center p-8 bg-white rounded-lg shadow-sm">
           <p className="text-gray-500">No new notifications</p>
         </div>
       ) : (
         <div className="space-y-3">
-          {notifications.map((notification) => (
+          {allNotifications.map((notification) => (
             <div
               key={notification._id}
               onClick={() => handleNotificationClick(notification)}

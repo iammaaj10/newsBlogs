@@ -153,7 +153,7 @@ const Profile = () => {
                         value={updatedProfile.username}
                         onChange={handleInputChange}
                         placeholder="Username"
-                        className="w-full p-2 border border-gray-300 rounded-lg mb-3"
+                        className="w-full p-2 border border-gray-300 rounded-lg mb-3 text-blue-800 font-bold"
                     />
                     <textarea
                         name="about"

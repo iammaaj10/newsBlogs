@@ -18,7 +18,8 @@ const blogsSchema = new mongoose.Schema({
     comments: [
         {
           text: String,
-          postedby: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+          postedby: { type: mongoose.Schema.Types.ObjectId, 
+            ref: "User" },
         },
       ],
     userid: {

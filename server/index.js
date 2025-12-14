@@ -9,6 +9,7 @@ import aiRoutes from "./routes/ai.js";
 import cors from "cors";
 import http from "http";
 import { Server } from "socket.io";
+import  askGemini  from './gemini.js';  
 
 dotenv.config({ path: ".env" });
 
@@ -67,7 +68,7 @@ io.on("connection", (socket) => {
     socket.join(userId);
     userSocketMap.set(userId, socket.id);
     
-    console.log(`✅ User ${userId} joined room with socket ${socket.id}`);
+    // console.log(`User ${userId} joined room with socket ${socket.id}`);
     
     // Confirm connection
     socket.emit('joined', { userId, socketId: socket.id });
@@ -75,7 +76,7 @@ io.on("connection", (socket) => {
 
   // Handle real-time like updates
   socket.on("likeUpdate", (data) => {
-    console.log("👍 Like update received:", data);
+    console.log(" Like update received:", data);
     
     // Broadcast to all users except sender
     socket.broadcast.emit("likeUpdate", {
@@ -94,7 +95,7 @@ io.on("connection", (socket) => {
 
   // Handle real-time comment updates
   socket.on("commentUpdate", (data) => {
-    console.log("💬 Comment update received:", data);
+    // console.log(" Comment update received:", data);
     
     // Broadcast to all users except sender
     socket.broadcast.emit("commentUpdate", {
@@ -110,7 +111,7 @@ io.on("connection", (socket) => {
 
   // Handle notifications
   socket.on("notification", (data) => {
-    console.log("🔔 Notification:", data);
+    // console.log("🔔 Notification:", data);
     
     if (data.toUserId && userSocketMap.has(data.toUserId)) {
       const targetSocketId = userSocketMap.get(data.toUserId);
@@ -120,7 +121,7 @@ io.on("connection", (socket) => {
 
   // Handle disconnection
   socket.on("disconnect", () => {
-    console.log("❌ User disconnected:", socket.id);
+    console.log(" User disconnected:", socket.id);
     
     if (socket.userId) {
       userSocketMap.delete(socket.userId);
@@ -137,9 +138,9 @@ global.emitNotification = (toUserId, notificationData) => {
   }
 };
 
-// Export for use in routes
+
 export { io, userSocketMap };
 
 server.listen(process.env.PORT, () => {
-  console.log(`🚀 Server started on port ${process.env.PORT}`);
+  console.log(` Server started on port ${process.env.PORT}`);
 });

@@ -59,9 +59,9 @@ const BlogPost = React.memo(({ blogs, isDarkMode }) => {
     }
   }, [blogId, userId]);
 
-  const handleCommentUpdate = useCallback((data) => {
+ const handleCommentUpdate = useCallback((data) => {
     if (data.blogId === blogId) {
-      console.log('💬 Adding comment from socket:', data);
+      console.log('Adding comment from socket:', data);
       setComments(prevComments => {
         const exists = prevComments.some(c => c._id === data.comment._id);
         return exists ? prevComments : [...prevComments, data.comment];
@@ -73,13 +73,13 @@ const BlogPost = React.memo(({ blogs, isDarkMode }) => {
   useEffect(() => {
     if (!socket || !isConnected) return;
 
-    console.log('🎧 Setting up socket listeners for blog:', blogId);
+    
     
     const unsubscribeLike = socket.on ? socket.on('likeUpdate', handleLikeUpdate) : () => {};
     const unsubscribeComment = socket.on ? socket.on('commentUpdate', handleCommentUpdate) : () => {};
 
     return () => {
-      console.log('🧹 Cleaning up socket listeners for blog:', blogId);
+      
       if (typeof unsubscribeLike === 'function') unsubscribeLike();
       if (typeof unsubscribeComment === 'function') unsubscribeComment();
     };
@@ -436,7 +436,7 @@ const BlogPost = React.memo(({ blogs, isDarkMode }) => {
                     <p className={`font-semibold mb-2 ${
                       isDarkMode ? 'text-orange-400' : 'text-orange-600'
                     }`}>
-                      {comment?.postedby?.name || "Anonymous"}
+                      {comment?.postedby?.name || "Loding user "}
                     </p>
                     <p className={`leading-relaxed ${
                       isDarkMode ? 'text-gray-300' : 'text-gray-700'

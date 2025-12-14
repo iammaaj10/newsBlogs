@@ -43,7 +43,7 @@ const Navbar = () => {
                 <NavLink
                     to="/news"
                     className={({ isActive }) =>
-                        `font-bold block py-2 pr-4 pl-3 duration-200 ${isActive ? "text-gray-500" : "text-white"} hover:text-orange-700`
+                        `font-bold block py-2 pr-4 pl-3 duration-200 ${isActive ? "text-gray-400" : "text-white"} hover:text-orange-700`
                     }
                 >
                     News
