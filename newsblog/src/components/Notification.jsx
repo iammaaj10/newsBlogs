@@ -4,8 +4,10 @@ import axios from 'axios';
 import { USER_API_END_POINT } from '../utils/constant';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
 import { useNotification } from '../context/NotificationContext';
+import { HiBell, HiHeart, HiChatBubbleLeft, HiUserPlus } from 'react-icons/hi2';
+import Avatar from 'react-avatar';
+import profile1 from '../assets/profile.png';
 
 const Notification = () => {
   const [notifications, setNotifications] = useState([]);
@@ -14,7 +16,6 @@ const Notification = () => {
   const navigate = useNavigate();
   const { notifications: socketNotifications, clearNotifications } = useNotification();
 
-  // Fetch notifications from API
   const fetchNotifications = useCallback(async () => {
     if (!user?._id) return;
     
@@ -23,7 +24,6 @@ const Notification = () => {
       const response = await axios.get(`${USER_API_END_POINT}/notifications/${user._id}`, {
         withCredentials: true
       });
-      // Handle the new response structure
       const notificationsData = Array.isArray(response.data.notifications) ? response.data.notifications : [];
       setNotifications(notificationsData);
     } catch (error) {
@@ -35,23 +35,18 @@ const Notification = () => {
     }
   }, [user?._id]);
 
-  // Initial fetch
   useEffect(() => {
     fetchNotifications();
   }, [fetchNotifications]);
 
-  // Combine API and socket notifications
   const allNotifications = React.useMemo(() => {
     const combined = [...socketNotifications, ...notifications];
-    // Remove duplicates based on _id
     const uniqueNotifications = Array.from(
       new Map(combined.map(n => [n._id, n])).values()
     );
-    // Sort by creation date (newest first)
     return uniqueNotifications.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   }, [socketNotifications, notifications]);
 
-  // Cleanup old notifications
   const cleanupNotifications = async () => {
     try {
       await axios.delete(`${USER_API_END_POINT}/notifications/${user._id}`, {
@@ -71,46 +66,18 @@ const Notification = () => {
   const getNotificationIcon = (type) => {
     switch (type) {
       case 'like':
-        return '❤️';
+        return <HiHeart className="text-rose-500" size={16} />;
       case 'comment':
-        return '💬';
+        return <HiChatBubbleLeft className="text-indigo-600" size={15} />;
       case 'follow':
-        return '👤';
+        return <HiUserPlus className="text-slate-800" size={15} />;
       default:
-        return '📢';
-    }
-  };
-
-  const getNotificationMessage = (notification) => {
-    const fromUser = notification.fromUser?.username || 'Someone';
-    
-    switch (notification.type) {
-      case 'like':
-        return (
-          <span>
-            <strong>{fromUser}</strong> liked your blog{' '}
-            <strong>"{notification.blog?.title || 'Untitled'}"</strong>
-          </span>
-        );
-      case 'comment':
-        return (
-          <span>
-            <strong>{fromUser}</strong> commented on your blog{' '}
-            <strong>"{notification.blog?.title || 'Untitled'}"</strong>
-          </span>
-        );
-      case 'follow':
-        return (
-          <span>
-            <strong>{fromUser}</strong> started following you
-          </span>
-        );
-      default:
-        return 'New notification';
+        return <HiBell className="text-slate-600" size={16} />;
     }
   };
 
   const getTimeAgo = (createdAt) => {
+    if (!createdAt) return '';
     const now = new Date();
     const notificationDate = new Date(createdAt);
     const diffInMinutes = Math.floor((now - notificationDate) / (1000 * 60));
@@ -118,77 +85,88 @@ const Notification = () => {
     const diffInDays = Math.floor(diffInHours / 24);
 
     if (diffInMinutes < 1) return 'Just now';
-    if (diffInMinutes === 1) return '1 minute ago';
-    if (diffInMinutes < 60) return `${diffInMinutes} minutes ago`;
-    if (diffInHours === 1) return '1 hour ago';
-    if (diffInHours < 24) return `${diffInHours} hours ago`;
-    if (diffInDays === 1) return '1 day ago';
-    if (diffInDays < 7) return `${diffInDays} days ago`;
+    if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
+    if (diffInHours < 24) return `${diffInHours}h ago`;
+    if (diffInDays < 7) return `${diffInDays}d ago`;
     return notificationDate.toLocaleDateString();
   };
 
   const handleNotificationClick = (notification) => {
-    if (notification.type === 'like' || notification.type === 'comment') {
-      if (notification.blog?._id) {
-        navigate(`/blog/${notification.blog._id}`);
-      }
-    } else if (notification.type === 'follow') {
-      if (notification.fromUser?._id) {
-        navigate(`/profile/${notification.fromUser._id}`);
-      }
+    if (notification.type === 'follow' && notification.fromUser?._id) {
+      navigate(`/premium/profile/${notification.fromUser._id}`);
+    } else {
+      navigate('/premium');
     }
   };
 
   if (loading) {
     return (
-      <div className="w-full max-w-2xl mx-auto p-4">
-        <div className="text-center text-gray-600">Loading notifications...</div>
+      <div className="p-8 text-center bg-white rounded-2xl border border-slate-200/90 shadow-sm animate-pulse font-sans">
+        <p className="text-xs font-bold text-slate-400">Loading notifications...</p>
       </div>
     );
   }
 
   return (
-    <div className="w-full max-w-2xl mx-auto p-4">
+    <div className="w-full p-5 bg-white rounded-2xl border border-slate-200/90 shadow-sm font-sans">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-gray-800">Notifications</h2>
+        <div className="flex items-center gap-2">
+          <HiBell size={20} className="text-slate-900" />
+          <h2 className="text-lg font-extrabold tracking-tight text-slate-900">Notifications</h2>
+        </div>
         {allNotifications.length > 0 && (
           <button
             onClick={() => {
               toast.promise(cleanupNotifications(), {
-                pending: 'Cleaning up notifications...',
-                success: 'Notifications cleaned up!',
-                error: 'Failed to clean up notifications'
+                pending: 'Cleaning up...',
+                success: 'Notifications cleared',
+                error: 'Failed to clear'
               });
             }}
-            className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors duration-200 ease-in-out"
+            className="px-3 py-1 text-xs font-bold rounded-lg bg-slate-100 text-slate-600 hover:bg-rose-50 hover:text-rose-600 transition-colors"
           >
-            Clear All Notifications
+            Clear All
           </button>
         )}
       </div>
 
       {allNotifications.length === 0 ? (
-        <div className="text-center p-8 bg-white rounded-lg shadow-sm">
-          <p className="text-gray-500">No new notifications</p>
+        <div className="text-center py-12 text-slate-400 space-y-2">
+          <HiBell size={32} className="mx-auto text-slate-300" />
+          <p className="text-xs font-bold text-slate-700">You're all caught up!</p>
+          <p className="text-[11px] text-slate-400">New activity on your posts or followers will show up here.</p>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-2.5">
           {allNotifications.map((notification) => (
             <div
               key={notification._id}
               onClick={() => handleNotificationClick(notification)}
-              className="flex items-start gap-3 bg-white p-4 rounded-lg shadow-sm hover:bg-gray-50 transition-all duration-200 cursor-pointer border border-gray-100"
+              className="flex items-center gap-3.5 p-3 rounded-xl bg-slate-50 border border-slate-200/70 hover:bg-slate-100/80 transition-colors cursor-pointer"
             >
-              <div className="text-xl">
-                {getNotificationIcon(notification.type)}
+              <div className="relative flex-shrink-0">
+                <Avatar
+                  src={notification.fromUser?.profilePic || profile1}
+                  size="38"
+                  round
+                  className="border border-slate-200"
+                />
+                <div className="absolute -bottom-1 -right-1 p-0.5 rounded-full bg-white border border-slate-200 shadow-sm">
+                  {getNotificationIcon(notification.type)}
+                </div>
               </div>
-              <div className="flex-1">
-                <p className="text-gray-800">
-                  {getNotificationMessage(notification)}
+
+              <div className="flex-1 min-w-0">
+                <p className="text-xs text-slate-800 leading-snug">
+                  <strong className="text-slate-900 font-bold mr-1">{notification.fromUser?.name || 'Someone'}</strong>
+                  {notification.type === 'like' && 'liked your post.'}
+                  {notification.type === 'comment' && 'commented on your post.'}
+                  {notification.type === 'follow' && 'started following you.'}
+                  {notification.type === 'unfollow' && 'unfollowed you.'}
                 </p>
-                <p className="text-sm text-gray-500 mt-1">
+                <span className="text-[10px] text-slate-400 block mt-0.5 font-medium">
                   {getTimeAgo(notification.createdAt)}
-                </p>
+                </span>
               </div>
             </div>
           ))}

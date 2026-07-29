@@ -1,4 +1,5 @@
 import { User } from "../models/userSchema.js";
+import { Blog } from "../models/blogsSchema.js";
 import bcryptjs from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { Notification } from "../models/notificationSchema.js";
@@ -117,17 +118,19 @@ export const Bookmarks = async (req, res) => {
             });
         }
 
-        if (user.Bookmarks.includes(blogid)) {
-            await User.findByIdAndUpdate(loggedInUser, { $pull: { Bookmarks: blogid } });
-            user.Bookmarks = user.Bookmarks.filter((id) => id !== blogid);
+        const isBookmarked = user.Bookmarks.some((id) => id.toString() === blogid.toString());
+
+        if (isBookmarked) {
+            user.Bookmarks = user.Bookmarks.filter((id) => id.toString() !== blogid.toString());
+            await user.save();
             return res.status(200).json({
                 message: "Removed from bookmarks",
                 success: true,
                 updatedBookmarks: user.Bookmarks, 
             });
         } else {
-            await User.findByIdAndUpdate(loggedInUser, { $push: { Bookmarks: blogid } });
             user.Bookmarks.push(blogid);
+            await user.save();
             return res.status(200).json({
                 message: "Added to bookmarks",
                 success: true,
@@ -385,14 +388,26 @@ export const updateProfile = async (req, res) => {
             return res.status(404).json({ message: "User not found", success: false });
         }
 
-        user.username = username || user.username;
-        user.about = about || user.about;
+        if (username) user.username = username;
+        if (about !== undefined) user.about = about;
 
         if (profilePic && profilePic !== user.profilePic) {
             user.profilePic = profilePic;
         }
 
         await user.save();
+
+        if (profilePic || username) {
+            await Blog.updateMany(
+                { userid: userId },
+                {
+                    $set: {
+                        "userDetails.0.profilePic": user.profilePic,
+                        "userDetails.0.username": user.username,
+                    }
+                }
+            );
+        }
 
         return res.status(200).json({
             message: "Profile updated successfully",

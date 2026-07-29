@@ -1,20 +1,23 @@
 import mongoose from "mongoose";
 import dotenv from "dotenv";
-import removeUnusedIndexes from "./removeUnusedIndexes.js"; // Adjust path as necessary
 
-dotenv.config({
-    path: "./config/.env"
-});
+dotenv.config();
 
-const databaseconnection = () => {
-    mongoose.connect(process.env.MONGO_URI)
-        .then(async () => {
-            console.log("Connected to MongoDB");
-            await removeUnusedIndexes(); // Call it here to remove the index once
-        })
-        .catch((error) => {
-            console.log("Database connection error:", error);
+const databaseconnection = async () => {
+    const mongoUri = process.env.MONGO_URI;
+    if (!mongoUri) {
+        console.error("❌ MONGO_URI is missing in environment variables.");
+        return;
+    }
+
+    try {
+        await mongoose.connect(mongoUri, {
+            serverSelectionTimeoutMS: 5000,
         });
+        console.log("✅ Connected to MongoDB successfully.");
+    } catch (error) {
+        console.error("❌ Database connection error:", error.message);
+    }
 };
 
 export default databaseconnection;

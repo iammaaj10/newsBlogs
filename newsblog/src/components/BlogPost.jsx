@@ -1,22 +1,17 @@
-// BlogPost.jsx - Optimized version
+// BlogPost.jsx - Editorial Light Theme Version
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Avatar from 'react-avatar';
-import { FaRegCommentAlt } from "react-icons/fa";
-import { AiOutlineLike, AiFillLike } from "react-icons/ai";
-import { CiBookmark } from "react-icons/ci";
-import { IoBookmark } from "react-icons/io5";
-import { MdDelete } from "react-icons/md";
+import { HiChatBubbleLeft, HiHeart, HiOutlineHeart, HiBookmark, HiOutlineBookmark, HiTrash } from "react-icons/hi2";
 import axios from 'axios';
 import { BLOG_API_END_POINT, USER_API_END_POINT } from '../utils/constant';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
-import { toggleRefresh } from '../redux/blogsSlics';
+import { toggleRefresh, updatePostLikes, updatePostComments } from '../redux/blogsSlics';
 import { updateUserBookmarks, updateUsersLikes } from '../redux/userSlice';
 import { useSocket } from '../context/SocketProvider';
 import profile from "../assets/profile.png";
 
-const BlogPost = React.memo(({ blogs, isDarkMode }) => {
-  // State management
+const BlogPost = React.memo(({ blogs }) => {
   const [isBookmark, setBookmark] = useState(false);
   const [isLiked, setLiked] = useState(false);
   const [showComments, setShowComments] = useState(false);
@@ -25,77 +20,70 @@ const BlogPost = React.memo(({ blogs, isDarkMode }) => {
   const [likesCount, setLikesCount] = useState(0);
   const [isUpdating, setIsUpdating] = useState(false);
 
-  const { user } = useSelector(store => store.user);
+  const { user } = useSelector((store) => store.user);
   const dispatch = useDispatch();
   const { socket, isConnected, emit } = useSocket();
 
-  // Memoized values
   const blogId = useMemo(() => blogs?._id, [blogs?._id]);
   const userId = useMemo(() => user?._id, [user?._id]);
   const blogOwnerId = useMemo(() => blogs?.userid, [blogs?.userid]);
   const isOwnPost = useMemo(() => userId === blogOwnerId, [userId, blogOwnerId]);
 
-  // Initialize state from props
   useEffect(() => {
     if (blogs) {
-      setLiked(blogs.likes?.includes(userId) || false);
+      const userHasLiked = blogs.likes?.some(id => id?.toString() === userId?.toString());
+      setLiked(Boolean(userHasLiked));
       setLikesCount(blogs.likes?.length || 0);
       setComments(blogs.comments || []);
     }
   }, [blogs, userId]);
 
   useEffect(() => {
-    setBookmark(user?.Bookmarks?.includes(blogId) || false);
+    const userHasBookmarked = user?.Bookmarks?.some(id => id?.toString() === blogId?.toString());
+    setBookmark(Boolean(userHasBookmarked));
   }, [user?.Bookmarks, blogId]);
 
-  // Socket event handlers with useCallback
   const handleLikeUpdate = useCallback((data) => {
     if (data.blogId === blogId && data.userId !== userId) {
-      console.log('📊 Updating likes from socket:', data);
       setLikesCount(data.likesCount);
       if (data.likedUsers && Array.isArray(data.likedUsers)) {
-        setLiked(data.likedUsers.includes(userId));
+        const userHasLiked = data.likedUsers.some(id => id?.toString() === userId?.toString());
+        setLiked(Boolean(userHasLiked));
+        dispatch(updatePostLikes({ blogId, likes: data.likedUsers }));
       }
     }
-  }, [blogId, userId]);
+  }, [blogId, userId, dispatch]);
 
- const handleCommentUpdate = useCallback((data) => {
+  const handleCommentUpdate = useCallback((data) => {
     if (data.blogId === blogId) {
-      console.log('Adding comment from socket:', data);
-      setComments(prevComments => {
-        const exists = prevComments.some(c => c._id === data.comment._id);
-        return exists ? prevComments : [...prevComments, data.comment];
+      setComments((prevComments) => {
+        const exists = prevComments.some((c) => c._id === data.comment._id);
+        const newCommentsList = exists ? prevComments : [...prevComments, data.comment];
+        dispatch(updatePostComments({ blogId, comments: newCommentsList }));
+        return newCommentsList;
       });
     }
-  }, [blogId]);
+  }, [blogId, dispatch]);
 
-  // Set up socket listeners (only once)
   useEffect(() => {
     if (!socket || !isConnected) return;
-
-    
-    
     const unsubscribeLike = socket.on ? socket.on('likeUpdate', handleLikeUpdate) : () => {};
     const unsubscribeComment = socket.on ? socket.on('commentUpdate', handleCommentUpdate) : () => {};
 
     return () => {
-      
       if (typeof unsubscribeLike === 'function') unsubscribeLike();
       if (typeof unsubscribeComment === 'function') unsubscribeComment();
     };
   }, [socket, isConnected, handleLikeUpdate, handleCommentUpdate, blogId]);
 
-  // Optimized like handler
   const likeDislikeHandler = useCallback(async () => {
     if (isUpdating) return;
-    
     try {
       setIsUpdating(true);
       const wasLiked = isLiked;
       const newLikedState = !wasLiked;
-      const newLikesCount = wasLiked ? likesCount - 1 : likesCount + 1;
-      
-      // Optimistic update
+      const newLikesCount = wasLiked ? Math.max(0, likesCount - 1) : likesCount + 1;
+
       setLiked(newLikedState);
       setLikesCount(newLikesCount);
 
@@ -107,58 +95,41 @@ const BlogPost = React.memo(({ blogs, isDarkMode }) => {
 
       if (res.data.success) {
         dispatch(updateUsersLikes(res.data.updatedlikes));
-        
-        // Emit socket event
+        dispatch(updatePostLikes({ blogId, likes: res.data.updatedlikes }));
         if (emit) {
-          const success = emit('likeUpdate', {
+          emit('likeUpdate', {
             blogId,
             userId,
             liked: newLikedState,
             likesCount: newLikesCount,
             likedUsers: res.data.updatedlikes,
-            blogOwnerId
+            blogOwnerId,
           });
-          
-          if (success) {
-            console.log('📡 Like update emitted successfully');
-          }
         }
-
-        // Send notification for others' posts
         if (newLikedState && !isOwnPost) {
           try {
-            await axios.post(`${USER_API_END_POINT}/handleLike`, {
-              userId,
-              blogId,
-              toUserId: blogOwnerId
-            }, { withCredentials: true });
-          } catch (notifyErr) {
-            console.warn("🔔 Notification failed:", notifyErr.message);
-          }
+            await axios.post(
+              `${USER_API_END_POINT}/handleLike`,
+              { userId, blogId, toUserId: blogOwnerId },
+              { withCredentials: true }
+            );
+          } catch (err) {}
         }
-
-        toast.success(res.data.message);
       } else {
-        // Revert on failure
         setLiked(wasLiked);
         setLikesCount(likesCount);
-        toast.error(res.data.message);
       }
     } catch (error) {
-      // Revert on error
       setLiked(!isLiked);
       setLikesCount(likesCount);
-      console.error("❌ Like error:", error);
-      toast.error("Failed to update like status");
+      console.error("Like error:", error);
     } finally {
       setIsUpdating(false);
     }
   }, [isLiked, likesCount, blogId, userId, blogOwnerId, isOwnPost, emit, dispatch, isUpdating]);
 
-  // Optimized bookmark handler
   const bookmarkHandler = useCallback(async () => {
     if (isUpdating) return;
-    
     try {
       setIsUpdating(true);
       const wasBookmarked = isBookmark;
@@ -175,24 +146,19 @@ const BlogPost = React.memo(({ blogs, isDarkMode }) => {
         toast.success(res.data.message);
       } else {
         setBookmark(wasBookmarked);
-        toast.error("Failed to update bookmark");
       }
     } catch (error) {
       setBookmark(!isBookmark);
-      console.error("❌ Bookmark error:", error);
-      toast.error("An error occurred");
+      console.error("Bookmark error:", error);
     } finally {
       setIsUpdating(false);
     }
   }, [isBookmark, blogId, userId, dispatch, isUpdating]);
 
-  // Optimized comment handler
   const postCommentHandler = useCallback(async () => {
     if (!commentText.trim() || isUpdating) return;
-
     try {
       setIsUpdating(true);
-      
       const res = await axios.put(
         `${BLOG_API_END_POINT}/addComment/${blogId}`,
         { text: commentText, id: userId },
@@ -200,251 +166,209 @@ const BlogPost = React.memo(({ blogs, isDarkMode }) => {
       );
 
       if (res.data.success) {
-        const newComment = res.data.blog.comments.slice(-1)[0];
-        
-        setComments(res.data.blog.comments);
+        const updatedComments = res.data.blog.comments || [];
+        const newComment = updatedComments.slice(-1)[0];
+        setComments(updatedComments);
+        dispatch(updatePostComments({ blogId, comments: updatedComments }));
         setCommentText("");
-        
-        // Emit socket event
         if (emit) {
-          const success = emit('commentUpdate', {
-            blogId,
-            comment: newComment,
-            blogOwnerId
-          });
-          
-          if (success) {
-            console.log('📡 Comment update emitted successfully');
-          }
+          emit('commentUpdate', { blogId, comment: newComment, blogOwnerId });
         }
-
-        // Send notification for others' posts
         if (!isOwnPost) {
           try {
-            await axios.post(`${USER_API_END_POINT}/handleComment`, {
-              userId,
-              blogId,
-              toUserId: blogOwnerId
-            }, { withCredentials: true });
-          } catch (notifyErr) {
-            console.warn("🔔 Notification failed:", notifyErr.message);
-          }
+            await axios.post(
+              `${USER_API_END_POINT}/handleComment`,
+              { userId, blogId, toUserId: blogOwnerId },
+              { withCredentials: true }
+            );
+          } catch (err) {}
         }
-
-        toast.success("Comment added successfully!");
-      } else {
-        toast.error(res.data.message || "Failed to add comment");
+        toast.success("Comment added");
       }
     } catch (error) {
-      console.error("❌ Comment error:", error);
-      toast.error("Failed to add comment");
+      console.error("Comment error:", error);
     } finally {
       setIsUpdating(false);
     }
-  }, [commentText, blogId, userId, blogOwnerId, isOwnPost, emit, isUpdating]);
+  }, [commentText, blogId, userId, blogOwnerId, isOwnPost, emit, dispatch, isUpdating]);
 
-  // Delete handler
   const deletePostHandler = useCallback(async () => {
     if (!isOwnPost || isUpdating) return;
-    
     try {
       setIsUpdating(true);
       const res = await axios.delete(`${BLOG_API_END_POINT}/delete/${blogId}`, {
         withCredentials: true,
       });
-      
       if (res.data.success) {
         dispatch(toggleRefresh());
-        toast.success(res.data.message);
+        toast.success("Post deleted");
       }
     } catch (error) {
-      console.error("❌ Delete error:", error);
-      toast.error("Failed to delete post");
+      console.error("Delete error:", error);
     } finally {
       setIsUpdating(false);
     }
   }, [blogId, isOwnPost, dispatch, isUpdating]);
 
-  // Loading state
-  if (!blogs) {
-    return (
-      <div className={`p-6 mt-2 mb-4 rounded-xl shadow-lg animate-pulse ${
-        isDarkMode ? 'bg-gray-800/80' : 'bg-white/90'
-      }`}>
-        <div className="flex gap-4">
-          <div className="w-12 h-12 bg-gray-300 rounded-full"></div>
-          <div className="flex-1">
-            <div className="h-4 bg-gray-300 rounded mb-2"></div>
-            <div className="h-20 bg-gray-300 rounded"></div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const timeAgo = useMemo(() => {
+    if (!blogs?.createdAt) return '';
+    const date = new Date(blogs.createdAt);
+    const now = new Date();
+    const diffInMinutes = Math.floor((now - date) / (1000 * 60));
+    if (diffInMinutes < 1) return 'Just now';
+    if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    if (diffInHours < 24) return `${diffInHours}h ago`;
+    const diffInDays = Math.floor(diffInHours / 24);
+    if (diffInDays < 7) return `${diffInDays}d ago`;
+    return date.toLocaleDateString();
+  }, [blogs?.createdAt]);
+
+  const authorName = blogs?.userDetails?.[0]?.name || (isOwnPost ? user?.name : 'Anonymous');
+  const authorUsername = blogs?.userDetails?.[0]?.username || (isOwnPost ? user?.username : 'user');
+  const authorPic = (isOwnPost ? user?.profilePic : blogs?.userDetails?.[0]?.profilePic) || profile;
+
+  if (!blogs) return null;
 
   return (
-    <div className={`p-6 mt-2 mb-4 rounded-xl shadow-lg backdrop-blur-sm transition-all duration-300 hover:shadow-xl ${
-      isDarkMode 
-        ? 'bg-gray-800/80 border border-gray-700/50 hover:bg-gray-800/90' 
-        : 'bg-white/90 border border-gray-200/50 hover:bg-white'
-    }`}>
-      <div className="flex gap-4">
-        <div className="flex-shrink-0">
-          <Avatar
-            src={
-              blogs?.userDetails?.[0]?._id === userId
-                ? user?.profilePic || profile
-                : blogs?.userDetails?.[0]?.profilePic || profile
-            }
-            size="48"
-            round={true}
-            className="ring-2 ring-orange-500/20"
-          />
-        </div>
-        
+    <div className="p-5 sm:p-6 bg-white rounded-2xl border border-slate-200/90 shadow-sm hover:shadow-md transition-shadow font-sans">
+      <div className="flex gap-3 sm:gap-4 items-start">
+        <Avatar src={authorPic} size="42" round className="border border-slate-200 flex-shrink-0 mt-0.5" />
+
         <div className="flex-1 min-w-0">
-          {/* Header */}
-          <div className="flex items-center gap-2 mb-3">
-            <h1 className={`font-bold text-lg truncate ${
-              isDarkMode ? 'text-white' : 'text-gray-900'
-            }`}>
-              {blogs?.userDetails?.[0]?.name}
-            </h1>
-            <p className={`text-sm flex-shrink-0 ${
-              isDarkMode ? 'text-gray-400' : 'text-gray-500'
-            }`}>
-              @{blogs?.userDetails?.[0]?._id === userId
-                ? user?.username
-                : blogs?.userDetails?.[0]?.username
-              }
-            </p>
+          {/* Article Header */}
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <h3 className="font-extrabold text-sm text-slate-900 truncate tracking-tight">{authorName}</h3>
+              <span className="text-xs text-slate-500 truncate">@{authorUsername}</span>
+              {timeAgo && (
+                <>
+                  <span className="text-xs text-slate-300">•</span>
+                  <span className="text-xs text-slate-400">{timeAgo}</span>
+                </>
+              )}
+            </div>
+
+            {isOwnPost && (
+              <button
+                onClick={deletePostHandler}
+                disabled={isUpdating}
+                className="p-1 rounded-md text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                title="Delete"
+              >
+                <HiTrash size={16} />
+              </button>
+            )}
           </div>
 
-          {/* Content */}
-          <p className={`mb-4 leading-relaxed ${
-            isDarkMode ? 'text-gray-200' : 'text-gray-800'
-          }`}>
-            {blogs?.description}
-          </p>
+          {/* Article Body */}
+          {blogs?.description && (
+            <p className="text-sm text-slate-800 leading-relaxed mb-3.5 whitespace-pre-line font-normal">
+              {blogs.description}
+            </p>
+          )}
 
-          {/* Image */}
+          {/* Attachment Image */}
           {blogs?.image && (
-            <div className="mb-4">
+            <div className="mb-4 overflow-hidden rounded-xl border border-slate-200">
               <img
                 src={blogs.image}
-                alt="Blog"
-                className="w-full max-w-md h-64 object-cover rounded-xl shadow-md border transition-transform duration-200 hover:scale-[1.02]"
+                alt="Article attachment"
+                className="w-full max-h-96 object-cover"
                 loading="lazy"
               />
             </div>
           )}
 
-          {/* Action Buttons */}
-          <div className="flex items-center justify-between py-3">
+          {/* Clean Action Toolbar */}
+          <div className="flex items-center justify-between pt-3 border-t border-slate-100">
             <button
-              className={`flex items-center gap-2 px-3 py-2 rounded-full transition-all duration-200 ${
-                isDarkMode 
-                  ? 'hover:bg-gray-700/80 text-gray-300 hover:text-blue-400' 
-                  : 'hover:bg-blue-50 text-gray-600 hover:text-blue-600'
+              onClick={() => setShowComments((prev) => !prev)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
+                showComments ? 'bg-slate-100 text-slate-900' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
               }`}
-              onClick={() => setShowComments(prev => !prev)}
-              disabled={isUpdating}
             >
-              <FaRegCommentAlt size={16} />
-              <span className="text-sm font-medium">{comments.length}</span>
+              <HiChatBubbleLeft size={16} />
+              <span>{comments.length}</span>
             </button>
 
             <button
-              className={`flex items-center gap-2 px-3 py-2 rounded-full transition-all duration-200 ${
-                isLiked 
-                  ? (isDarkMode ? 'bg-red-500/20 text-red-400' : 'bg-red-50 text-red-500')
-                  : (isDarkMode ? 'hover:bg-gray-700/80 text-gray-300 hover:text-red-400' : 'hover:bg-red-50 text-gray-600 hover:text-red-600')
-              } ${isUpdating ? 'opacity-50 cursor-not-allowed' : ''}`}
               onClick={likeDislikeHandler}
               disabled={isUpdating}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
+                isLiked
+                  ? 'bg-rose-50 text-rose-600'
+                  : 'text-slate-500 hover:text-rose-600 hover:bg-rose-50'
+              }`}
             >
-              {isLiked ? <AiFillLike size={18} /> : <AiOutlineLike size={18} />}
-              <span className="text-sm font-medium">{likesCount}</span>
+              {isLiked ? <HiHeart size={16} className="text-rose-600" /> : <HiOutlineHeart size={16} />}
+              <span>{likesCount}</span>
             </button>
 
             <button
-              className={`p-2 rounded-full transition-all duration-200 ${
-                isBookmark
-                  ? (isDarkMode ? 'text-blue-400 bg-blue-500/20' : 'text-blue-600 bg-blue-50')
-                  : (isDarkMode ? 'hover:bg-gray-700/80 text-gray-300 hover:text-blue-400' : 'hover:bg-blue-50 text-gray-600 hover:text-blue-600')
-              } ${isUpdating ? 'opacity-50 cursor-not-allowed' : ''}`}
               onClick={bookmarkHandler}
               disabled={isUpdating}
+              className={`p-1.5 rounded-lg text-xs font-bold transition-colors ${
+                isBookmark
+                  ? 'bg-indigo-50 text-indigo-600'
+                  : 'text-slate-500 hover:text-indigo-600 hover:bg-indigo-50'
+              }`}
             >
-              {isBookmark ? <IoBookmark size={18} /> : <CiBookmark size={18} />}
+              {isBookmark ? <HiBookmark size={16} className="text-indigo-600" /> : <HiOutlineBookmark size={16} />}
             </button>
-
-            {isOwnPost && (
-              <button
-                className={`p-2 rounded-full transition-all duration-200 ${
-                  isDarkMode 
-                    ? 'hover:bg-red-500/20 text-gray-300 hover:text-red-400' 
-                    : 'hover:bg-red-50 text-gray-600 hover:text-red-500'
-                } ${isUpdating ? 'opacity-50 cursor-not-allowed' : ''}`}
-                onClick={deletePostHandler}
-                disabled={isUpdating}
-              >
-                <MdDelete size={18} />
-              </button>
-            )}
           </div>
 
           {/* Comments Section */}
           {showComments && (
-            <div className={`mt-6 p-4 rounded-xl transition-all duration-300 ${
-              isDarkMode ? 'bg-gray-900/50 border border-gray-700/30' : 'bg-gray-50/80 border border-gray-200/50'
-            }`}>
-              <div className="mb-4">
-                <textarea
-                  className={`w-full p-4 border rounded-xl resize-none transition-all duration-200 focus:ring-2 focus:ring-orange-500/50 ${
-                    isDarkMode 
-                      ? 'bg-gray-800/80 border-gray-600/50 text-white placeholder-gray-400 focus:border-orange-500/50' 
-                      : 'bg-white/90 border-gray-300/50 text-gray-900 placeholder-gray-500 focus:border-orange-500/50'
-                  }`}
-                  placeholder="Add a thoughtful comment..."
+            <div className="mt-4 p-4 rounded-xl bg-slate-50 border border-slate-200/80 space-y-3">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  className="flex-1 px-3 py-2 text-xs rounded-lg outline-none bg-white border border-slate-200 text-slate-900 placeholder-slate-400 focus:border-slate-400"
+                  placeholder="Write a comment..."
                   value={commentText}
-                  rows="3"
                   onChange={(e) => setCommentText(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && postCommentHandler()}
                   disabled={isUpdating}
                 />
                 <button
-                  className={`mt-3 px-6 py-2 rounded-xl font-medium transition-all duration-200 transform hover:scale-105 ${
-                    isDarkMode
-                      ? 'bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white shadow-lg'
-                      : 'bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white shadow-lg'
-                  } ${isUpdating || !commentText.trim() ? 'opacity-50 cursor-not-allowed' : ''}`}
                   onClick={postCommentHandler}
                   disabled={isUpdating || !commentText.trim()}
+                  className="px-3.5 py-2 text-xs font-bold rounded-lg bg-slate-900 text-white hover:bg-slate-800 transition-colors disabled:opacity-50"
                 >
-                  {isUpdating ? 'Posting...' : 'Post Comment'}
+                  Reply
                 </button>
               </div>
 
-              {/* Comments List */}
-              <div className="space-y-3">
-                {comments.map((comment, index) => (
-                  <div key={comment._id || index} className={`p-4 rounded-xl transition-all duration-200 ${
-                    isDarkMode 
-                      ? 'bg-gray-800/60 border border-gray-700/30 hover:bg-gray-800/80' 
-                      : 'bg-white/80 border border-gray-200/50 hover:bg-white'
-                  }`}>
-                    <p className={`font-semibold mb-2 ${
-                      isDarkMode ? 'text-orange-400' : 'text-orange-600'
-                    }`}>
-                      {comment?.postedby?.name || "Loding user "}
-                    </p>
-                    <p className={`leading-relaxed ${
-                      isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                    }`}>
-                      {comment.text}
-                    </p>
-                  </div>
-                ))}
+              <div className="space-y-2 pt-1">
+                {comments.length > 0 ? (
+                  comments.map((comment, index) => {
+                    const commenterObj = typeof comment?.postedby === 'object' ? comment?.postedby : null;
+                    const commenterName = commenterObj?.name || (comment?.postedby === user?._id ? user?.name : 'User');
+                    const commenterUsername = commenterObj?.username || (comment?.postedby === user?._id ? user?.username : '');
+                    const commenterPic = commenterObj?.profilePic || profile;
+
+                    return (
+                      <div
+                        key={comment._id || index}
+                        className="flex items-start gap-2.5 p-2.5 rounded-xl bg-white border border-slate-200/80 text-xs"
+                      >
+                        <Avatar src={commenterPic} size="28" round className="border border-slate-200 flex-shrink-0 mt-0.5" />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5 mb-0.5">
+                            <span className="font-bold text-slate-900">{commenterName}</span>
+                            {commenterUsername && (
+                              <span className="text-[11px] text-slate-400 font-medium">@{commenterUsername}</span>
+                            )}
+                          </div>
+                          <p className="text-slate-700 leading-relaxed font-normal">{comment.text}</p>
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <p className="text-[11px] text-center text-slate-400 py-1">No comments yet</p>
+                )}
               </div>
             </div>
           )}

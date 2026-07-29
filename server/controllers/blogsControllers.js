@@ -18,7 +18,7 @@ export const Createblog = async (req, res) => {
             description: description || "", 
             image: image || "", 
             userid: id,
-            userDetails: user,
+            userDetails: [user],
         });
 
         return res.status(201).json({
@@ -55,57 +55,52 @@ export const  deleteBlog = async (req,res)=>{
 }
 
     export const likeAnddislike = async (req, res) => {
-        try {
+    try {
         const loggedInUser = req.body.id; 
         const blogId = req.params.id; 
     
-        
         if (!loggedInUser || !blogId) {
             return res.status(400).json({
-            message: "Invalid request. Missing required parameters.",
-            success: false,
+                message: "Invalid request. Missing required parameters.",
+                success: false,
             });
         }
     
-        
         const blog = await Blog.findById(blogId);
         if (!blog) {
             return res.status(404).json({
-            message: "Blog not found",
-            success: false,
+                message: "Blog not found",
+                success: false,
             });
         }
     
-        
-        if (blog.likes.includes(loggedInUser)) {
-            await Blog.findByIdAndUpdate(blogId, { $pull: { likes: loggedInUser } });
-            blog.likes = blog.likes.filter((id) => id !== loggedInUser);
+        const isLiked = blog.likes.some((id) => id.toString() === loggedInUser.toString());
+    
+        if (isLiked) {
+            blog.likes = blog.likes.filter((id) => id.toString() !== loggedInUser.toString());
+            await blog.save();
             return res.status(200).json({
-                message: "You disliked the blog post",
+                message: "Post unliked",
                 success: true,
                 updatedlikes: blog.likes, 
             });
         } else {
-            await Blog.findByIdAndUpdate(blogId, { $push: { likes: loggedInUser } });
             blog.likes.push(loggedInUser);
+            await blog.save();
             return res.status(200).json({
-                message: "You liked the blog post",
+                message: "Post liked",
                 success: true,
                 updatedlikes: blog.likes, 
             });
         }
-        
-        } catch (error) {
-        console.error("Error in likeAndDislike function:", error);
-    
-        
+    } catch (error) {
+        console.error("Error in likeAnddislike function:", error);
         return res.status(500).json({
             message: "Internal server error",
             success: false,
         });
-        }
-    };
-  
+    }
+};
 
 export const getAllBlogs = async (req, res) => {
     try {
@@ -119,18 +114,19 @@ export const getAllBlogs = async (req, res) => {
             });
         }
 
-       
-        const loggedInUserBlogs = await Blog.find({ userid: id });
+        const loggedInUserBlogs = await Blog.find({ userid: id }).populate("comments.postedby", "name username profilePic");
 
-        
         const followingUserBlogs = await Promise.all(
-            loggedInUser.following.map((otherUserId) => {
-                return Blog.find({ userid: otherUserId });
+            (loggedInUser.following || []).map((otherUserId) => {
+                return Blog.find({ userid: otherUserId }).populate("comments.postedby", "name username profilePic");
             })
         );
 
+        const allBlogs = loggedInUserBlogs.concat(...followingUserBlogs);
+        allBlogs.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
         return res.status(200).json({
-            blogs: loggedInUserBlogs.concat(...followingUserBlogs),
+            blogs: allBlogs,
             success: true
         });
     } catch (error) {
@@ -142,35 +138,43 @@ export const getAllBlogs = async (req, res) => {
     }
 };
 
-export const getFollowingBlogs = async (req,res) => {
+export const getFollowingBlogs = async (req, res) => {
     try {
-
         const id = req.params.id;
         const loggedInUser = await User.findById(id);
-       const followingUserBlogs = await Promise.all(
-            loggedInUser.following.map((otherUserId) => {
-                return Blog.find({ userid: otherUserId });
+        if (!loggedInUser) {
+            return res.status(404).json({
+                message: "User not found",
+                success: false
+            });
+        }
+        const followingUserBlogs = await Promise.all(
+            (loggedInUser.following || []).map((otherUserId) => {
+                return Blog.find({ userid: otherUserId }).populate("comments.postedby", "name username profilePic");
             })
         );
 
+        const blogs = [].concat(...followingUserBlogs);
+        blogs.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
         return res.status(200).json({
-            blogs: [].concat(...followingUserBlogs),
+            blogs,
             success: true
         });
-        
     } catch (error) {
-        console.log(error);
-        
+        console.error("Error in getFollowingBlogs:", error);
+        return res.status(500).json({
+            message: "Internal server error",
+            success: false
+        });
     }
-}
-
+};
 
 export const addComment = async (req, res) => {
     try {
       const { text, id } = req.body; 
       const blogId = req.params.id; 
     
-      // Validate input
       if (!text || !id) {
         return res.status(400).json({
           message: "Comment text and user ID are required",
@@ -178,15 +182,6 @@ export const addComment = async (req, res) => {
         });
       }
     
-      // Validate blog ID and user ID formats
-      if (!blogId.match(/^[0-9a-fA-F]{24}$/) || !id.match(/^[0-9a-fA-F]{24}$/)) {
-        return res.status(400).json({
-          message: "Invalid blog or user ID",
-          success: false,
-        });
-      }
-    
-      // Find the blog by ID
       const blog = await Blog.findById(blogId);
       if (!blog) {
         return res.status(404).json({
@@ -195,31 +190,31 @@ export const addComment = async (req, res) => {
         });
       }
     
-      // Add the comment
-      const comment = { text, postedby: id };
+      const commenter = await User.findById(id).select("name username profilePic");
+
+      const comment = {
+        text,
+        postedby: commenter?._id || id,
+      };
+
       blog.comments.push(comment);
       await blog.save();
     
-      // Fetch the updated blog with populated comments
-      const updatedBlog = await Blog.findById(blogId).populate(
-        "comments.postedby",
-        "name email"
-      );
-    
-      // Return the updated blog with populated comments
-      res.status(200).json({
+      const updatedBlog = await Blog.findById(blogId).populate("comments.postedby", "name username profilePic");
+
+      return res.status(200).json({
         message: "Comment added successfully",
-        blog: updatedBlog, // Includes populated comments
+        blog: updatedBlog,
         success: true,
       });
     } catch (error) {
       console.error("Error in addComment:", error.message);
-      res.status(500).json({
+      return res.status(500).json({
         message: "An error occurred while adding the comment",
         success: false,
       });
     }
-  };
+};
   
   export const getBlogById = async (req, res) => {
     try {

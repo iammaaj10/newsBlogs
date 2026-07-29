@@ -27,10 +27,6 @@ const userSchema = new mongoose.Schema({
         type: Array,
         default: []
     },
-    Bookmarks: {
-        type: Array,
-        default: []
-    },
     Bookmarks: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: "Blog"

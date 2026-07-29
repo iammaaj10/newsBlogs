@@ -54,10 +54,16 @@ const userSlice = createSlice({
             }
         },
         updateProfile: (state, action) => {
-            if (state.profile && state.profile._id === state.user?._id) {
+            if (state.user) {
+                state.user = {
+                    ...state.user,
+                    ...action.payload,
+                };
+            }
+            if (state.profile) {
                 state.profile = {
                     ...state.profile,
-                    ...action.payload, // Merge new profile data
+                    ...action.payload,
                 };
             }
         }

@@ -1,145 +1,129 @@
 import React, { useState } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
+import { HiBars3, HiXMark, HiArrowRight } from 'react-icons/hi2';
 import Login from './Login';
 
 const Navbar = () => {
     const [isOpen, setIsOpen] = useState(false);
-    const [showSignUp, setShowSignUp] = useState(false);
     const [showLogin, setShowLogin] = useState(false);
+    const navigate = useNavigate();
 
     const toggle = () => {
         setIsOpen(!isOpen);
     };
 
-    const handleSignUpClick = () => {
-        setShowSignUp(true);
-    };
-    const handleSignUpClick1 = () => {
-        setShowSignUp(false);
-    };
-
     const handleLogin = () => {
         setShowLogin(true);
-    }
-    const handleLogin1=()=>{
+    };
+
+    const handleCloseLogin = () => {
         setShowLogin(false);
-    }
+    };
+
+    const navLinks = [
+        { to: '/', label: 'Home', end: true },
+        { to: '/news', label: 'News' },
+        { to: '/tech', label: 'Tech' },
+        { to: '/entertainment', label: 'Entertainment' },
+    ];
 
     return (
-        <nav className="nav flex items-center justify-between p-3 bg-gradient-to-r from-gray-800 via-blue-700 to-gray-900">
-            <h2 className="text-2xl text-blue-400 font-bold">
-                News<span className="text-3xl text-red-500 font-bold">B</span>logs
-            </h2>
+        <nav className="sticky top-0 z-50 bg-white border-b border-slate-200 shadow-xs font-sans">
+            <div className="max-w-[1700px] w-full mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+                {/* Brand Logo */}
+                <div className="cursor-pointer flex items-center gap-2" onClick={() => navigate('/')}>
+                    <h1 className="text-2xl font-black tracking-tight text-slate-900 font-outfit">
+                        News<span className="text-indigo-600">Blogs</span>
+                    </h1>
+                </div>
 
-            <div className="hidden lg:flex gap-12">
-                <NavLink
-                    to="/"
-                    className={({ isActive }) =>
-                        `font-bold block py-2 pr-4 pl-3 duration-200 ${isActive ? "text-gray-500" : "text-white"} hover:text-orange-700`
-                    }
-                >
-                    Home
-                </NavLink>
-                <NavLink
-                    to="/news"
-                    className={({ isActive }) =>
-                        `font-bold block py-2 pr-4 pl-3 duration-200 ${isActive ? "text-gray-400" : "text-white"} hover:text-orange-700`
-                    }
-                >
-                    News
-                </NavLink>
-                <NavLink
-                    to="/tech"
-                    className={({ isActive }) =>
-                        `font-bold block py-2 pr-4 pl-3 duration-200 ${isActive ? "text-gray-500" : "text-white"} hover:text-orange-700`
-                    }
-                >
-                    Tech
-                </NavLink>
-                <NavLink
-                    to="/entertainment"
-                    className={({ isActive }) =>
-                        `font-bold block py-2 pr-4 pl-3 duration-200 ${isActive ? "text-gray-500" : "text-white"} hover:text-orange-700`
-                    }
-                >
-                    Entertainment
-                </NavLink>
+                {/* Desktop Nav Links (Visible from md breakpoint and up) */}
+                <div className="hidden md:flex items-center gap-1">
+                    {navLinks.map((link) => (
+                        <NavLink
+                            key={link.to}
+                            to={link.to}
+                            end={link.end}
+                            className={({ isActive }) =>
+                                `px-3.5 py-2 text-xs font-bold rounded-xl transition-all ${
+                                    isActive
+                                        ? 'text-slate-900 bg-slate-100'
+                                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                                }`
+                            }
+                        >
+                            {link.label}
+                        </NavLink>
+                    ))}
+                </div>
+
+                {/* Right Action Buttons */}
+                <div className="hidden md:flex items-center gap-3">
+                    <button
+                        onClick={handleLogin}
+                        className="px-4 py-2 text-xs font-bold text-slate-700 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-all"
+                    >
+                        Sign In
+                    </button>
+                    <button
+                        onClick={handleLogin}
+                        className="flex items-center gap-2 px-4 py-2 text-xs font-bold bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition-all shadow-sm active:scale-95"
+                    >
+                        <span>Join Us</span>
+                        <HiArrowRight size={14} />
+                    </button>
+                </div>
+
+                {/* Mobile Menu Button (Only below md) */}
                 <button
-                    className="font-bold block py-2 pr-4 pl-3 duration-200 text-white hover:text-orange-700"
-                    onClick={handleLogin}
+                    className="p-2 md:hidden rounded-xl text-slate-700 hover:bg-slate-100"
+                    onClick={toggle}
+                    aria-label="Toggle Navigation"
                 >
-                    NewsBlogs
+                    {isOpen ? <HiXMark size={24} /> : <HiBars3 size={24} />}
                 </button>
             </div>
 
-            <button className="hidden lg:flex border-gray-500 text-white bg-blue-800 rounded-md px-6 py-2 items-center hover:bg-gray-300 hover:border hover:border-gray-500 hover:text-black gap-2 group" onClick={handleLogin}>
-                Join Us
-                <i className="fa-solid fa-arrow-right group-hover:translate-x-2 transition duration-300"></i>
-            </button>
+            {/* Mobile Dropdown Menu Panel */}
+            {isOpen && (
+                <div className="md:hidden bg-white border-b border-slate-200 px-4 py-4 space-y-3 shadow-lg">
+                    <div className="space-y-1">
+                        {navLinks.map((link) => (
+                            <NavLink
+                                key={link.to}
+                                to={link.to}
+                                end={link.end}
+                                onClick={toggle}
+                                className={({ isActive }) =>
+                                    `block px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                                        isActive
+                                            ? 'bg-slate-900 text-white'
+                                            : 'text-slate-700 hover:bg-slate-100'
+                                    }`
+                                }
+                            >
+                                {link.label}
+                            </NavLink>
+                        ))}
+                    </div>
 
-            <button className="p-3 lg:hidden" onClick={toggle}>
-                <i className="fa-solid fa-bars"></i>
-            </button>
-
-            <div className={`${isOpen ? 'flex' : 'hidden'} fixed flex-col bg-neutral-800 top-0 right-0 p-3 z-10 lg:hidden w-3/4 h-full max-w-md`}>
-                <div className="flex justify-between items-center relative">
-                    <button className="p-3 absolute right-0 top-0" onClick={toggle}>
-                        <i className="fa-solid fa-xmark text-white hover:text-red-500"></i>
-                    </button>
+                    <div className="pt-3 border-t border-slate-100 flex flex-col gap-2">
+                        <button
+                            onClick={() => {
+                                toggle();
+                                handleLogin();
+                            }}
+                            className="w-full py-2.5 rounded-xl text-xs font-bold bg-slate-900 text-white hover:bg-slate-800 transition-all flex items-center justify-center gap-2"
+                        >
+                            <span>Join Us / Sign In</span>
+                            <HiArrowRight size={14} />
+                        </button>
+                    </div>
                 </div>
+            )}
 
-                <div className="mt-10 flex flex-col gap-9 p-3">
-                    <NavLink
-                        to="/"
-                        className={({ isActive }) =>
-                            `block py-2 pr-4 pl-3 duration-200 ${isActive ? "text-orange-700" : "text-white"} border-b border-gray-100 hover:bg-gray-50 hover:text-orange-700`
-                        }
-                    >
-                        Home
-                    </NavLink>
-                    <NavLink
-                        to="/news"
-                        className={({ isActive }) =>
-                            `block py-2 pr-4 pl-3 duration-200 ${isActive ? "text-orange-700" : "text-white"} border-b border-gray-100 hover:bg-gray-50 hover:text-orange-700`
-                        }
-                    >
-                        News
-                    </NavLink>
-                    <NavLink
-                        to="/tech"
-                        className={({ isActive }) =>
-                            `block py-2 pr-4 pl-3 duration-200 ${isActive ? "text-orange-700" : "text-white"} border-b border-gray-100 hover:bg-gray-50 hover:text-orange-700`
-                        }
-                    >
-                        Tech
-                    </NavLink>
-                    <NavLink
-                        to="/entertainment"
-                        className={({ isActive }) =>
-                            `block py-2 pr-4 pl-3 duration-200 ${isActive ? "text-orange-700" : "text-white"} border-b border-gray-100 hover:bg-gray-50 hover:text-orange-700`
-                        }
-                    >
-                        Entertainment
-                    </NavLink>
-                    <button
-                        className="block py-2 pr-4 pl-3 duration-200 text-white hover:text-orange-700"
-                        onClick={handleLogin}
-                    >
-                        NewsBlogs
-                    </button>
-                </div>
-
-                <div className="mt-6">
-                    <button className="border-gray-500 text-white bg-blue-800 rounded-md px-6 py-2 items-center hover:bg-gray-300 hover:border hover:border-gray-500 hover:text-black group" onClick={handleLogin}>
-                        Join Us
-                        <i className="fa-solid fa-arrow-right group-hover:translate-x-2 transition duration-300"></i>
-                    </button>
-                </div>
-            </div>
-
-            
-            {showLogin && <Login onClose={handleLogin1}
-             />}
+            {/* Login / Sign Up Modal */}
+            {showLogin && <Login onClose={handleCloseLogin} />}
         </nav>
     );
 };

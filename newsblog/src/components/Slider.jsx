@@ -1,56 +1,84 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { albumsData } from '../assets/info';
+import { HiChevronLeft, HiChevronRight } from 'react-icons/hi2';
 
-const Slider = ({ autoSlide = false, autoSlideInterval = 3000 }) => {
+const Slider = ({ autoSlide = true, autoSlideInterval = 4500 }) => {
   const [cur, setCur] = useState(0);
 
-  const prev = () => setCur((cur) => (cur === 0 ? albumsData.length - 1 : cur - 1));
+  const prev = useCallback(() => {
+    setCur((c) => (c === 0 ? albumsData.length - 1 : c - 1));
+  }, []);
 
-  const next = () => setCur((cur) => (cur === albumsData.length - 1 ? 0 : cur + 1));
+  const next = useCallback(() => {
+    setCur((c) => (c === albumsData.length - 1 ? 0 : c + 1));
+  }, []);
 
   useEffect(() => {
     if (!autoSlide) return;
     const slideInterval = setInterval(next, autoSlideInterval);
     return () => clearInterval(slideInterval);
-  }, [cur, autoSlide, autoSlideInterval]);
+  }, [autoSlide, autoSlideInterval, next]);
 
   return (
-    <div className='overflow-hidden h-[50vh] lg:h-[90vh] w-full relative'>
-      <div className='flex w-full h-full'>
+    <div className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+      <div className="relative overflow-hidden rounded-3xl h-[420px] sm:h-[500px] lg:h-[580px] w-full shadow-lg group">
+        
+        {/* Slides */}
         {albumsData.map(({ image, desc, btn }, index) => (
           <div
             key={index}
-            className={`w-full h-full object-cover transition-transform duration-600 ease-in-out ${index === cur ? 'block' : 'hidden'}`}
+            className={`absolute inset-0 w-full h-full transition-opacity duration-700 ease-in-out ${
+              index === cur ? 'opacity-100 z-10 pointer-events-auto' : 'opacity-0 z-0 pointer-events-none'
+            }`}
           >
+            {/* Background Image with Dark Vignette Gradient Overlay */}
             <img
               src={image}
-              alt={`slide-${index}`}
-              className='w-full h-full object-cover opacity-90'
+              alt={`Slide ${index + 1}`}
+              className="w-full h-full object-cover transform scale-105 transition-transform duration-10000"
             />
-            <div className='absolute lg:top-20 right-0 lg:text-start left-0 lg:left-36 p-3 hidden lg:block'>
-              <button className='text-white bg-orange-700 rounded-lg p-3 font-bold'>{btn}</button>
-            </div>
-            <div className='absolute lg:top-36 left-0 lg:left-36 lg:w-1/4 lg:text-start text-white p-2 bg-black bg-opacity-50 rounded-lg hidden lg:block'>
-              <p className='text-2xl font-bold w-fit'>{desc}</p>
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/40 to-transparent" />
+
+            {/* Slide Content Box */}
+            <div className="absolute bottom-10 left-6 sm:left-12 right-6 sm:right-12 max-w-2xl text-white space-y-3 z-20">
+              <span className="inline-block px-3 py-1 text-[11px] font-bold uppercase tracking-wider bg-white/20 backdrop-blur-md rounded-full text-white border border-white/30">
+                {btn || 'Featured Story'}
+              </span>
+              <h2 className="text-2xl sm:text-4xl font-extrabold font-outfit tracking-tight leading-tight text-white drop-shadow-md">
+                {desc}
+              </h2>
             </div>
           </div>
         ))}
-      </div>
-      <div className='absolute top-1/2 transform -translate-y-1/2 w-full flex justify-between px-4 z-1'>
-        <button className='bg-white opacity-80 text-white p-2 px-4 rounded-full shadow hover:bg-white hover:opacity-100' onClick={prev}>
-          <i className="fa-solid fa-arrow-left text-black font-bold"></i>
+
+        {/* Prev / Next Buttons */}
+        <button
+          onClick={prev}
+          aria-label="Previous Slide"
+          className="absolute left-4 top-1/2 -translate-y-1/2 z-30 p-3 rounded-full bg-white/80 hover:bg-white text-slate-900 shadow-md backdrop-blur-md transition-all opacity-80 group-hover:opacity-100 hover:scale-105"
+        >
+          <HiChevronLeft size={20} />
         </button>
-        <button className='bg-white opacity-80 text-white p-2 px-4 rounded-full shadow hover:bg-white hover:opacity-100' onClick={next}>
-          <i className="fa-solid fa-arrow-right text-black font-bold"></i>
+
+        <button
+          onClick={next}
+          aria-label="Next Slide"
+          className="absolute right-4 top-1/2 -translate-y-1/2 z-30 p-3 rounded-full bg-white/80 hover:bg-white text-slate-900 shadow-md backdrop-blur-md transition-all opacity-80 group-hover:opacity-100 hover:scale-105"
+        >
+          <HiChevronRight size={20} />
         </button>
-      </div>
-      <div className='absolute bottom-4 right-0 left-0'>
-        <div className='flex items-center justify-center gap-2'>
+
+        {/* Indicator Dots */}
+        <div className="absolute bottom-4 right-6 sm:right-12 z-30 flex items-center gap-2">
           {albumsData.map((_, i) => (
-            <div
+            <button
               key={i}
-              className={`transition-all w-3 h-3 bg-white rounded-full ${cur === i ? 'p-2' : 'bg-opacity-50'}`}
-            ></div>
+              onClick={() => setCur(i)}
+              aria-label={`Go to slide ${i + 1}`}
+              className={`h-2 rounded-full transition-all duration-300 ${
+                cur === i ? 'w-8 bg-white' : 'w-2 bg-white/40 hover:bg-white/70'
+              }`}
+            />
           ))}
         </div>
       </div>

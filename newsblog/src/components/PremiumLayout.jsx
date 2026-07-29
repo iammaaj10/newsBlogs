@@ -1,85 +1,130 @@
-import React, { useEffect, useState } from 'react';
-import { Outlet, useNavigate } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { Outlet, useNavigate, NavLink } from 'react-router-dom';
 import PremiumNav from './PremiumNav';
-import RigthBar from './RigthBar';
+import RightBar from './RigthBar';
 import useOtherUsers from '../hooks/useOtherUsers';
-
 import { useSelector } from 'react-redux';
 import useGetMyBlogs from '../hooks/useGetMyBlogs';
+import { HiHome, HiOutlineHome, HiBell, HiOutlineBell, HiBookmark, HiOutlineBookmark, HiUser, HiOutlineUser } from 'react-icons/hi2';
+import Avatar from 'react-avatar';
+import profile1 from '../assets/profile.png';
 
 const PremiumLayout = () => {
-  const [isDarkMode, setIsDarkMode] = useState(false);
-
-  const {user, otherUsers} = useSelector(store=>store.user)
+  const { user, otherUsers } = useSelector((store) => store.user);
   useOtherUsers(user?._id);
   useGetMyBlogs(user?._id);
 
   const navigate = useNavigate();
 
-  // Check for saved theme preference or default to light mode
-  useEffect(() => {
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme) {
-      setIsDarkMode(savedTheme === 'dark');
-    }
-  }, []);
-
-  // Apply theme to document root
-  useEffect(() => {
-    if (isDarkMode) {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
-    }
-  }, [isDarkMode]);
-
   useEffect(() => {
     if (!user) {
-      navigate('/')
+      navigate('/');
     }
-  }, [])
+  }, [user, navigate]);
 
-  const toggleTheme = () => {
-    setIsDarkMode(!isDarkMode);
-  };
-  
   return (
-    <div className={`min-h-screen flex flex-col transition-colors duration-300 ${
-    isDarkMode ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'
-  }`}>
-      {/* Theme Toggle Button */}
-      <div className="fixed  right-4 z-50">
-        <button
-          onClick={toggleTheme}
-          className={`p-3 rounded-full transition-all duration-300 shadow-lg hover:scale-110 ${
-            isDarkMode
-              ? 'bg-yellow-400 text-gray-900 hover:bg-yellow-300'
-              : 'bg-gray-800 text-yellow-400 hover:bg-gray-700'
-          }`}
-          aria-label="Toggle theme"
-        >
-          {isDarkMode ? (
-            // Sun icon for light mode
-            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clipRule="evenodd" />
-            </svg>
-          ) : (
-            // Moon icon for dark mode
-            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
-            </svg>
-          )}
-        </button>
+    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans antialiased selection:bg-slate-900 selection:text-white">
+      {/* Mobile Top Header */}
+      <header className="sticky top-0 z-40 md:hidden flex items-center justify-between px-4 py-3 bg-white/95 border-b border-slate-200/80 backdrop-blur-md">
+        <div className="flex items-center gap-2.5">
+          <Avatar
+            src={user?.profilePic || profile1}
+            size="36"
+            round
+            className="cursor-pointer border border-slate-200"
+            onClick={() => navigate(`/premium/profile/${user?._id}`)}
+          />
+          <h1 className="text-xl font-extrabold tracking-tight text-slate-900 font-outfit">
+            News<span className="text-indigo-600">Blogs</span>
+          </h1>
+        </div>
+      </header>
+
+      {/* Desktop Main Layout Container */}
+      <div className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 flex gap-6 lg:gap-8 pt-4 sm:pt-6 pb-20 md:pb-10">
+        {/* Left Navigation Sidebar */}
+        <aside className="hidden md:block w-60 lg:w-72 flex-shrink-0 sticky top-6 h-[calc(100vh-3rem)]">
+          <PremiumNav />
+        </aside>
+
+        {/* Center Main Feed */}
+        <main className="flex-1 min-w-0 max-w-3xl mx-auto w-full">
+          <Outlet context={{ isDarkMode: false }} />
+        </main>
+
+        {/* Right Sidebar */}
+        <aside className="hidden lg:block w-80 lg:w-96 flex-shrink-0 sticky top-6 h-[calc(100vh-3rem)] overflow-y-auto custom-scrollbar">
+          <RightBar otherUsers={otherUsers} />
+        </aside>
       </div>
 
-      {/* Main Content */}
-      <div className='flex justify-between w-[90%] [h-100vh] mx-auto mt-5'>
-        <PremiumNav isDarkMode={isDarkMode} />
-        <Outlet />
-        <RigthBar otherUsers={otherUsers} isDarkMode={isDarkMode} />
-      </div>
+      {/* Mobile Bottom Bar Navigation */}
+      <nav className="fixed bottom-0 left-0 right-0 z-40 md:hidden flex justify-around items-center py-2 px-3 bg-white border-t border-slate-200/90 shadow-lg">
+        <NavLink
+          to="/premium"
+          end
+          className={({ isActive }) =>
+            `flex flex-col items-center gap-1 text-[11px] font-bold py-1.5 px-4 rounded-xl transition-all ${
+              isActive ? 'text-slate-900 bg-slate-100' : 'text-slate-500 hover:text-slate-900'
+            }`
+          }
+        >
+          {({ isActive }) => (
+            <>
+              {isActive ? <HiHome size={22} className="text-slate-900" /> : <HiOutlineHome size={22} />}
+              <span>Home</span>
+            </>
+          )}
+        </NavLink>
+
+        <NavLink
+          to="/premium/notifications"
+          className={({ isActive }) =>
+            `flex flex-col items-center gap-1 text-[11px] font-bold py-1.5 px-4 rounded-xl transition-all ${
+              isActive ? 'text-slate-900 bg-slate-100' : 'text-slate-500 hover:text-slate-900'
+            }`
+          }
+        >
+          {({ isActive }) => (
+            <>
+              {isActive ? <HiBell size={22} className="text-slate-900" /> : <HiOutlineBell size={22} />}
+              <span>Alerts</span>
+            </>
+          )}
+        </NavLink>
+
+        <NavLink
+          to="/premium/bookmarks"
+          className={({ isActive }) =>
+            `flex flex-col items-center gap-1 text-[11px] font-bold py-1.5 px-4 rounded-xl transition-all ${
+              isActive ? 'text-slate-900 bg-slate-100' : 'text-slate-500 hover:text-slate-900'
+            }`
+          }
+        >
+          {({ isActive }) => (
+            <>
+              {isActive ? <HiBookmark size={22} className="text-slate-900" /> : <HiOutlineBookmark size={22} />}
+              <span>Saved</span>
+            </>
+          )}
+        </NavLink>
+
+        <NavLink
+          to={`profile/${user?._id}`}
+          className={({ isActive }) =>
+            `flex flex-col items-center gap-1 text-[11px] font-bold py-1.5 px-4 rounded-xl transition-all ${
+              isActive ? 'text-slate-900 bg-slate-100' : 'text-slate-500 hover:text-slate-900'
+            }`
+          }
+        >
+          {({ isActive }) => (
+            <>
+              {isActive ? <HiUser size={22} className="text-slate-900" /> : <HiOutlineUser size={22} />}
+              <span>Profile</span>
+            </>
+          )}
+        </NavLink>
+      </nav>
     </div>
   );
 };

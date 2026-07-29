@@ -1,123 +1,127 @@
 import React, { useState } from 'react';
-import { FaXTwitter } from "react-icons/fa6";
-import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css'; 
+import { FaInstagram, FaFacebook, FaGithub, FaXTwitter } from "react-icons/fa6";
+import { toast } from 'react-toastify';
 import Login from './Login';
 
 const Footer = () => {
-  const [showSignUp, setShowSignUp] = useState(false);
-  const [feedback, setFeedback] = useState(''); 
+  const [showLogin, setShowLogin] = useState(false);
+  const [feedback, setFeedback] = useState('');
+  const [email, setEmail] = useState('');
 
- 
-  const handleSignUpClick = () => {
-    setShowSignUp(true);
-  };
-
-  // Function to handle closing the sign-up form
-  const handleSignUpClick1 = () => {
-    setShowSignUp(false);
-  };
-
-  // Function to handle feedback submission
-  const submitClick = () => {
-    if (feedback.trim() === '') {
-      toast.error('Please enter your feedback before submitting', { position: 'top-center' });
-    } else {
-      toast.success('Feedback submitted successfully', { position: 'top-center' });
-      setFeedback(''); 
+  const submitFeedback = () => {
+    if (!feedback.trim()) {
+      return toast.error('Please enter your feedback before submitting.');
     }
+    toast.success('Thank you! Feedback submitted successfully.');
+    setFeedback('');
+  };
+
+  const submitNewsletter = (e) => {
+    e.preventDefault();
+    if (!email.trim()) {
+      return toast.error('Please enter your email address.');
+    }
+    toast.success('Subscribed to NewsBlogs digest!');
+    setEmail('');
   };
 
   return (
-    <div className='bg-black w-full h-full p-3'>
-      <div className='text-center'>
-        <h1 className='text-xl text-violet-700 font-bold font-poppins'>Follow us on</h1>
-      </div>
-      <div className='flex gap-4 text-white p-3 items-center justify-center'>
-        <div className='bg-violet-700 rounded-full px-[8px] py-[2px] transition-transform transform hover:scale-125 hover:bg-gray-200 hover:text-black'>
-          <i className="fa-brands fa-instagram cursor-pointer text-xl"></i>
-        </div>
-        <div className='bg-violet-700 rounded-full px-[8px] py-[2px] transition-transform transform hover:scale-125 hover:bg-gray-200 hover:text-black'> 
-          <i className="fa-brands fa-facebook cursor-pointer text-xl"></i>
-        </div>
-        <div className='bg-violet-700 rounded-full px-[8px] py-[7px] transition-transform transform hover:scale-125 hover:bg-gray-200 hover:text-black'>
-        <FaXTwitter className='cursor-pointer' />
-        </div>
-        <div className='bg-violet-700 rounded-full px-[8px] py-[2px] transition-transform transform hover:scale-125 hover:bg-gray-200 hover:text-black'>
-          <i className="fa-brands fa-github cursor-pointer text-xl"></i>
-        </div>
-      </div>
-
-      <div className='flex flex-col lg:flex-row gap-20 mt-4'>
-        <div className='max-w-xl'>
-          <h1 className='text-violet-700 font-bold font-poppins text-xl mb-2'>About Us</h1>
-          <p className='text-violet-700 text-md font-poppins'>
-            NewsBlogs company started in 2024 with the ambition to provide the news and upload your blogs on our platform. Let's create a knowledgeable community and make your optimistic thoughts and put them on our platform and create a healthy environment...
-          </p>
-        </div>
-
-        <div className='max-w-xl'>
-          <h1 className='text-violet-700 font-bold font-poppins text-xl mb-2'>Contact Us</h1>
-          <div className="flex flex-col gap-3">
-            <i className="fa-solid fa-phone text-violet-700 font-md"> 9130304068</i>
-            <i className="fa-solid fa-envelope text-violet-700 font-md lowercase"> maajb1122@gmail.com</i>
+    <footer className="w-full bg-slate-900 text-slate-300 font-sans border-t border-slate-800">
+      <div className="max-w-[1700px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12 pb-12 border-b border-slate-800">
+          
+          {/* Column 1: Brand & About */}
+          <div className="space-y-4">
+            <h2 className="text-2xl font-black tracking-tight text-white font-outfit">
+              News<span className="text-indigo-500">Blogs</span>
+            </h2>
+            <p className="text-xs leading-relaxed text-slate-400 font-normal">
+              Empowering writers, journalists, and readers around the globe. Share your voice, explore breaking perspectives, and join a healthy community of optimistic thinkers.
+            </p>
+            {/* Social Links */}
+            <div className="flex items-center gap-2 pt-2">
+              <a href="#" className="p-2 rounded-xl bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 transition-colors">
+                <FaInstagram size={16} />
+              </a>
+              <a href="#" className="p-2 rounded-xl bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 transition-colors">
+                <FaFacebook size={16} />
+              </a>
+              <a href="#" className="p-2 rounded-xl bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 transition-colors">
+                <FaXTwitter size={16} />
+              </a>
+              <a href="#" className="p-2 rounded-xl bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 transition-colors">
+                <FaGithub size={16} />
+              </a>
+            </div>
           </div>
 
-          <div className="flex mt-5">
-            <input
-              type="email"
-              placeholder="Enter the Email "
-              className="p-2 border border-violet-700 rounded-l-2xl focus:outline-none focus:ring-2 focus:ring-violet-500"
+          {/* Column 2: Quick Links */}
+          <div className="space-y-3">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-200">Categories & Topics</h3>
+            <ul className="space-y-2 text-xs text-slate-400 font-medium">
+              <li><a href="/news" className="hover:text-white transition-colors">World & National News</a></li>
+              <li><a href="/tech" className="hover:text-white transition-colors">Technology & AI</a></li>
+              <li><a href="/entertainment" className="hover:text-white transition-colors">Culture & Entertainment</a></li>
+              <li><a href="/premium" className="hover:text-white transition-colors">PRO Creator Feed</a></li>
+            </ul>
+          </div>
+
+          {/* Column 3: Newsletter Signup */}
+          <div className="space-y-3">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-200">Stay Updated</h3>
+            <p className="text-xs text-slate-400">Get top daily stories delivered directly to your inbox.</p>
+            <form onSubmit={submitNewsletter} className="flex items-center">
+              <input
+                type="email"
+                placeholder="Enter email address"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full px-3 py-2 text-xs rounded-l-xl outline-none bg-slate-800 border border-slate-700 text-white placeholder-slate-500 focus:border-slate-500"
+              />
+              <button
+                type="submit"
+                className="px-4 py-2 text-xs font-bold rounded-r-xl bg-indigo-600 hover:bg-indigo-700 text-white transition-colors flex-shrink-0"
+              >
+                Join
+              </button>
+            </form>
+          </div>
+
+          {/* Column 4: Feedback Box */}
+          <div className="space-y-3">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-200">Send Feedback</h3>
+            <textarea
+              value={feedback}
+              onChange={(e) => setFeedback(e.target.value)}
+              placeholder="Your feedback helps us improve..."
+              rows={3}
+              className="w-full p-3 text-xs rounded-xl outline-none bg-slate-800 border border-slate-700 text-white placeholder-slate-500 resize-none focus:border-slate-500"
             />
-            <button className="bg-violet-700 text-white font-semibold font-poppins p-2 rounded-r-2xl hover:bg-gray-500 hover:text-black">
-              Send
+            <button
+              onClick={submitFeedback}
+              className="px-4 py-2 text-xs font-bold rounded-xl bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 transition-colors"
+            >
+              Submit Feedback
             </button>
           </div>
 
-          {/* Feedback Section */}
-          <div className='mt-2 flex flex-col'>
-            <label className='text-lg font-bold text-violet-600 font-poppins'>Enter Your Feedback</label>
-            <textarea 
-              name="feedback" 
-              id="feedback" 
-              className='w-60 h-24 rounded-lg' 
-              value={feedback} 
-              onChange={(e) => setFeedback(e.target.value)} // Update feedback on typing
-            ></textarea>
-            <div className='w-80'>
-              <button 
-                className='px-4 py-2 bg-violet-700 text-white font-bold font-poppins rounded-2xl hover:bg-gray-500 hover:text-black transition-transform hover:scale-105 mt-3 w-fit' 
-                onClick={submitClick}
-              >
-                Submit
-              </button>
-            </div>
+        </div>
+
+        {/* Footer Bottom */}
+        <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500 font-medium">
+          <p>© {new Date().getFullYear()} NewsBlogs. Designed by <strong className="text-slate-300">MAAJ</strong></p>
+          <div className="flex gap-6">
+            <button onClick={() => setShowLogin(true)} className="hover:text-slate-300 transition-colors">
+              Join Platform
+            </button>
+            <a href="#" className="hover:text-slate-300 transition-colors">Privacy Policy</a>
+            <a href="#" className="hover:text-slate-300 transition-colors">Terms of Service</a>
           </div>
-          <ToastContainer autoClose={2000} />
-        </div>
-
-        <div className='p-2 max-w-2xl'>
-          <h1 className='text-violet-700 font-bold font-poppins text-xl'>Register Now</h1>
-          <button 
-            className='bg-violet-700 text-white font-bold font-poppins rounded-full p-2 transition-transform transform hover:scale-125 hover:bg-gray-200 hover:text-black' 
-            onClick={handleSignUpClick}
-          >
-            Click Here
-          </button>
-          <p className='text-violet-700 text-md font-md font-poppins w-fit'>
-            Hurry up and do the registration for the osm experience in the world of news and newsblogs !!!
-          </p>
         </div>
       </div>
 
-      <div className='mt-5 p-2 text-center'>
-        <p className='text-violet-700 font-bold font-poppins'>
-          Copyright &copy; 2025 Designed by <span className="text-gray-500 uppercase">maaj</span>
-        </p>
-      </div>
-
-      {showSignUp && <Login onClose1={handleSignUpClick1} />}
-    </div>
+      {showLogin && <Login onClose={() => setShowLogin(false)} />}
+    </footer>
   );
 };
 

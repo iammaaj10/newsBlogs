@@ -7,13 +7,10 @@ export default {
   theme: {
     extend: {
       fontFamily: {
+        sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
+        outfit: ['"Outfit"', 'sans-serif'],
         poppins: ['Poppins', 'sans-serif'],
-        
       },
-      backgroundcolor: {
-          primary:"#8806ce"
-      },
-
     },
   },
   plugins: [],
